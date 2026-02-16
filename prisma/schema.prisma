@@ -8,20 +8,25 @@ datasource db {
 }
 
 model Job {
-  id          String   @id @default(cuid())
-  title       String
-  company     String
-  description String   @db.Text
-  location    String
-  filiere     String
-  niveau      String
-  region      String
-  url         String
-  source      String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id           String   @id @default(cuid())
+  title        String
+  company      String
+  description  String   @db.Text
+  location     String
+  filiere      String
+  niveau       String
+  region       String
+  contractType String   @default("Alternance")
+  url          String
+  source       String
+  isApproved   Boolean  @default(true)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   @@index([filiere])
   @@index([niveau])
   @@index([region])
+  @@index([contractType])
+  @@index([isActive])
 }

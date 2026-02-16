@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install:*)",
+      "Bash(npx tsx:*)",
+      "Bash(powershell -Command \"[Convert]::ToBase64String\\([System.Security.Cryptography.RandomNumberGenerator]::GetBytes\\(32\\)\\)\")",
+      "Bash(node -e:*)",
+      "Bash(where:*)",
+      "Bash(ngrok version:*)",
+      "Bash(winget install:*)",
+      "Bash(ngrok config check:*)",
+      "Bash(cmd /c \"ngrok config check\")",
+      "Bash(cmd /c:*)",
+      "Bash(where.exe:*)",
+      "Bash(dir:*)",
+      "Bash(powershell:*)",
+      "Bash(\"C:\\\\Users\\\\Galip ATA HAMDAN\\\\AppData\\\\Local\\\\Microsoft\\\\WinGet\\\\Packages\\\\Ngrok.Ngrok_Microsoft.Winget.Source_8wekyb3d8bbwe\\\\ngrok.exe\" version)",
+      "Bash(DATABASE_URL=\"postgresql://postgres:postgres@localhost:5432/ace_jobs_dev?schema=public\" npx tsx:*)"
+    ]
+  }
+}
