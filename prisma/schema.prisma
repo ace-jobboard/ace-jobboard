@@ -3,8 +3,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model Job {
@@ -17,10 +18,8 @@ model Job {
   niveau       String
   region       String
   contractType String   @default("Alternance")
-  url          String
+  url          String   @unique
   source       String
-  isApproved   Boolean  @default(true)
-  isActive     Boolean  @default(true)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -28,5 +27,4 @@ model Job {
   @@index([niveau])
   @@index([region])
   @@index([contractType])
-  @@index([isActive])
 }

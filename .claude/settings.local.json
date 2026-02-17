@@ -15,7 +15,9 @@
       "Bash(dir:*)",
       "Bash(powershell:*)",
       "Bash(\"C:\\\\Users\\\\Galip ATA HAMDAN\\\\AppData\\\\Local\\\\Microsoft\\\\WinGet\\\\Packages\\\\Ngrok.Ngrok_Microsoft.Winget.Source_8wekyb3d8bbwe\\\\ngrok.exe\" version)",
-      "Bash(DATABASE_URL=\"postgresql://postgres:postgres@localhost:5432/ace_jobs_dev?schema=public\" npx tsx:*)"
+      "Bash(DATABASE_URL=\"postgresql://postgres:postgres@localhost:5432/ace_jobs_dev?schema=public\" npx tsx:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npm run build:*)"
     ]
   }
 }
