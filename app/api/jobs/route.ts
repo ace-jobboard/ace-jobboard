@@ -48,7 +48,7 @@ export async function POST(request: Request) {
     const body = await request.json()
     const jobsData = Array.isArray(body) ? body : [body]
 
-    const requiredFields = ['title', 'company', 'description', 'location', 'filiere', 'niveau', 'region', 'url', 'source']
+    const requiredFields = ['title', 'url']
 
     for (const job of jobsData) {
       const missing = requiredFields.filter(f => !job[f])
@@ -64,7 +64,6 @@ export async function POST(request: Request) {
     const skipped = []
 
     for (const job of jobsData) {
-      // Check for duplicate URL (unique constraint)
       const existing = await prisma.job.findUnique({
         where: { url: job.url },
       })
@@ -77,15 +76,15 @@ export async function POST(request: Request) {
       const newJob = await prisma.job.create({
         data: {
           title: job.title,
-          company: job.company,
-          description: job.description,
-          location: job.location,
-          filiere: job.filiere,
-          niveau: job.niveau,
-          region: job.region,
+          company: job.company || 'Entreprise non renseignée',
+          description: job.description || '',
+          location: job.location || '',
+          filiere: job.filiere || 'Non classifié',
+          niveau: job.niveau || 'Bac+3',
+          region: job.region || '',
           contractType: job.contractType || 'Alternance',
           url: job.url,
-          source: job.source,
+          source: job.source || 'Adzuna',
         },
       })
       created.push(newJob)
