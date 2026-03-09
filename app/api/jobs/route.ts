@@ -25,9 +25,10 @@ export async function GET(request: Request) {
     const where = {
       isActive:   true,
       isApproved: true,
+      NOT: { source: 'adzuna' },
       ...(filiereFilter && { filiere: filiereFilter }),
       ...(niveau       && { niveau }),
-      ...(region       && { region }),
+      ...(region       && { region: { contains: region, mode: 'insensitive' as const } }),
       ...(contractType && { contractType }),
       ...(search && {
         OR: [

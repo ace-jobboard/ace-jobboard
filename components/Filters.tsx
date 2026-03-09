@@ -25,15 +25,15 @@ export default function Filters({ onFilterChange }: FiltersProps) {
   ]
 
   const regions = [
-    'Paris',
-    'Lyon',
-    'Marseille',
-    'Bordeaux',
-    'Toulouse',
-    'Lille',
-    'Nantes',
-    'Nice',
-    'Chambéry',
+    'Île-de-France',
+    'Auvergne-Rhône-Alpes',
+    'Nouvelle-Aquitaine',
+    'Occitanie',
+    'Hauts-de-France',
+    'Pays de la Loire',
+    'Provence-Alpes-Côte d'Azur',
+    'Grand Est',
+    'Bretagne',
   ]
 
   const inputClass = "border border-gray-300 bg-white rounded-lg px-3 py-2 text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:border-gray-500 focus:ring-1 focus:ring-gray-300 transition-colors w-full"

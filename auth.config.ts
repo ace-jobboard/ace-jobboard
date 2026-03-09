@@ -27,12 +27,12 @@ export const authConfig = {
         return true
       }
 
-      if (isDashboard && !isLoggedIn) {
+      if ((isDashboard || nextUrl.pathname === "/") && !isLoggedIn) {
         return false // Redirects to signIn page
       }
 
       if (isAuthPage && isLoggedIn) {
-        return Response.redirect(new URL("/dashboard", nextUrl))
+        return Response.redirect(new URL("/", nextUrl))
       }
 
       return true
