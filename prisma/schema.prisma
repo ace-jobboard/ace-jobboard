@@ -20,11 +20,149 @@ model Job {
   contractType String   @default("Alternance")
   url          String   @unique
   source       String
+  isApproved   Boolean  @default(true)
+  isActive     Boolean  @default(true)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+
+  // Multi-source tracking
+  sources      String[]
+  firstSeenAt  DateTime @default(now())
+  lastSeenAt   DateTime @default(now())
+
+  // Extra enrichment
+  salary       String?
+
+  // Apify metadata
+  apifyActorId String?
+  rawData      Json?
+
+  savedBy SavedJob[]
 
   @@index([filiere])
   @@index([niveau])
   @@index([region])
   @@index([contractType])
+}
+
+model ScrapeRun {
+  id           String    @id @default(cuid())
+  apifyRunId   String?   @unique
+  school       String
+  source       String
+  status       String    @default("RUNNING")
+
+  jobsFound    Int       @default(0)
+  jobsFiltered Int       @default(0)
+  jobsSaved    Int       @default(0)
+  duplicates   Int       @default(0)
+
+  keywords     String?
+  error        String?
+  startedAt    DateTime  @default(now())
+  completedAt  DateTime?
+  runTime      Int?
+
+  createdAt    DateTime  @default(now())
+
+  @@index([school])
+  @@index([status])
+  @@index([startedAt])
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  emailVerified DateTime?
+  password      String?
+  name          String?
+  image         String?
+
+  // School info
+  school         String?
+  educationLevel String?
+  graduationYear Int?
+  specialization String?
+
+  // Contact
+  phone     String?
+  linkedIn  String?
+  portfolio String?
+
+  // Preferences (stored as JSON)
+  preferences Json?
+
+  // CV
+  cvUrl        String?
+  cvFileName   String?
+  cvUploadedAt DateTime?
+
+  // Role
+  role String @default("USER") // "USER" | "ADMIN"
+
+  // Relations
+  accounts  Account[]
+  sessions  Session[]
+  savedJobs SavedJob[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model StudentWhitelist {
+  id               String   @id @default(cuid())
+  email            String   @unique
+  school           String
+  hubspotContactId String?
+  verifiedAt       DateTime @default(now())
+  expiresAt        DateTime
+
+  @@index([email])
+}
+
+model SavedJob {
+  id      String   @id @default(cuid())
+  userId  String
+  jobId   String
+  savedAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  job  Job  @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, jobId])
 }

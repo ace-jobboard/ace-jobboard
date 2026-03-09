@@ -36,58 +36,57 @@ export default function Filters({ onFilterChange }: FiltersProps) {
     'Chambéry',
   ]
 
+  const inputClass = "border border-gray-300 bg-white rounded-lg px-3 py-2 text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:border-gray-500 focus:ring-1 focus:ring-gray-300 transition-colors w-full"
+
   return (
-    <div className="bg-white p-6 rounded-lg shadow-md mb-8">
-      <h2 className="text-lg font-semibold mb-4">Filtres</h2>
+    <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+      <input
+        type="text"
+        placeholder="Rechercher un poste, une entreprise..."
+        className={inputClass}
+        onChange={(e) => onFilterChange({ search: e.target.value })}
+      />
 
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-        <input
-          type="text"
-          placeholder="Rechercher un poste, une entreprise..."
-          className="border rounded-lg px-4 py-2 md:col-span-1"
-          onChange={(e) => onFilterChange({ search: e.target.value })}
-        />
+      <select
+        className={inputClass}
+        onChange={(e) => onFilterChange({ filiere: e.target.value })}
+      >
+        <option value="">Toutes les filières</option>
+        {filieres.map(f => (
+          <option key={f} value={f}>{f}</option>
+        ))}
+      </select>
 
-        <select
-          className="border rounded-lg px-4 py-2"
-          onChange={(e) => onFilterChange({ filiere: e.target.value })}
-        >
-          <option value="">Toutes les filières</option>
-          {filieres.map(f => (
-            <option key={f} value={f}>{f}</option>
-          ))}
-        </select>
+      <select
+        className={inputClass}
+        onChange={(e) => onFilterChange({ niveau: e.target.value })}
+      >
+        <option value="">Tous les niveaux</option>
+        {niveaux.map(n => (
+          <option key={n} value={n}>{n}</option>
+        ))}
+      </select>
 
-        <select
-          className="border rounded-lg px-4 py-2"
-          onChange={(e) => onFilterChange({ niveau: e.target.value })}
-        >
-          <option value="">Tous les niveaux</option>
-          {niveaux.map(n => (
-            <option key={n} value={n}>{n}</option>
-          ))}
-        </select>
+      <select
+        className={inputClass}
+        onChange={(e) => onFilterChange({ contractType: e.target.value })}
+      >
+        <option value="">Tous les contrats</option>
+        {contractTypes.map(c => (
+          <option key={c} value={c}>{c}</option>
+        ))}
+      </select>
 
-        <select
-          className="border rounded-lg px-4 py-2"
-          onChange={(e) => onFilterChange({ contractType: e.target.value })}
-        >
-          <option value="">Tous les contrats</option>
-          {contractTypes.map(c => (
-            <option key={c} value={c}>{c}</option>
-          ))}
-        </select>
-
-        <select
-          className="border rounded-lg px-4 py-2"
-          onChange={(e) => onFilterChange({ region: e.target.value })}
-        >
-          <option value="">Toutes les régions</option>
-          {regions.map(r => (
-            <option key={r} value={r}>{r}</option>
-          ))}
-        </select>
-      </div>
+      <select
+        className={inputClass}
+        onChange={(e) => onFilterChange({ region: e.target.value })}
+      >
+        <option value="">Toutes les régions</option>
+        {regions.map(r => (
+          <option key={r} value={r}>{r}</option>
+        ))}
+      </select>
     </div>
   )
 }
+
