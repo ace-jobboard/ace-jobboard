@@ -147,7 +147,7 @@ model VerificationToken {
 model StudentWhitelist {
   id               String   @id @default(cuid())
   email            String   @unique
-  school           String
+  school           String?
   hubspotContactId String?
   verifiedAt       DateTime @default(now())
   expiresAt        DateTime

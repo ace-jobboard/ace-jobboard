@@ -65,12 +65,12 @@ export async function POST(request: Request) {
         where: { email },
         create: {
           email,
-          school:           hsData.school ?? null,
+          school:           hsData.school ?? undefined,
           hubspotContactId: hsData.contactId,
           expiresAt: new Date(Date.now() + 86_400_000),
         },
         update: {
-          school:     hsData.school ?? null,
+          school:     hsData.school ?? undefined,
           verifiedAt: new Date(),
           expiresAt:  new Date(Date.now() + 86_400_000),
         },
