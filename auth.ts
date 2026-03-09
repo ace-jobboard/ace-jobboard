@@ -12,14 +12,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
   session: { strategy: "jwt", maxAge: 30 * 24 * 60 * 60 },
   providers: [
-    MicrosoftEntraID({
-      clientId: process.env.AZURE_AD_CLIENT_ID!,
-      clientSecret: process.env.AZURE_AD_CLIENT_SECRET!,
-      // Use specific tenant GUID or "common" for multi-tenant apps
-      issuer: process.env.AZURE_AD_TENANT_ID
-        ? `https://login.microsoftonline.com/${process.env.AZURE_AD_TENANT_ID}/v2.0`
-        : "https://login.microsoftonline.com/common/v2.0",
-    }),
+    ...(process.env.AZURE_AD_CLIENT_ID && process.env.AZURE_AD_CLIENT_SECRET ? [
+      MicrosoftEntraID({
+        clientId: process.env.AZURE_AD_CLIENT_ID,
+        clientSecret: process.env.AZURE_AD_CLIENT_SECRET,
+        issuer: process.env.AZURE_AD_TENANT_ID
+          ? `https://login.microsoftonline.com/${process.env.AZURE_AD_TENANT_ID}/v2.0`
+          : "https://login.microsoftonline.com/common/v2.0",
+      }),
+    ] : []),
     Credentials({
       name: "credentials",
       credentials: {
