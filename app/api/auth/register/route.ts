@@ -54,7 +54,7 @@ export async function POST(request: Request) {
       }
 
       hubspotData = {
-        school:           hsData.school ?? null,
+        school:           hsData.school ?? undefined,
         phone:            hsData.phone,
         specialization:   hsData.specialization,
         hubspotContactId: hsData.contactId,
