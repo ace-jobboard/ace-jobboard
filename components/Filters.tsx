@@ -31,7 +31,7 @@ export default function Filters({ onFilterChange }: FiltersProps) {
     'Occitanie',
     'Hauts-de-France',
     'Pays de la Loire',
-    'Provence-Alpes-Côte d'Azur',
+    "Provence-Alpes-Côte d'Azur",
     'Grand Est',
     'Bretagne',
   ]
