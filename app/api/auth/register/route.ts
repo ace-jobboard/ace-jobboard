@@ -54,7 +54,7 @@ export async function POST(request: Request) {
       }
 
       hubspotData = {
-        school:           hsData.school,
+        school:           hsData.school ?? null,
         phone:            hsData.phone,
         specialization:   hsData.specialization,
         hubspotContactId: hsData.contactId,
@@ -65,12 +65,12 @@ export async function POST(request: Request) {
         where: { email },
         create: {
           email,
-          school:           hsData.school,
+          school:           hsData.school ?? null,
           hubspotContactId: hsData.contactId,
           expiresAt: new Date(Date.now() + 86_400_000),
         },
         update: {
-          school:     hsData.school,
+          school:     hsData.school ?? null,
           verifiedAt: new Date(),
           expiresAt:  new Date(Date.now() + 86_400_000),
         },
