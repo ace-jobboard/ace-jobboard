@@ -4,14 +4,13 @@ import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { signIn } from "next-auth/react"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { Eye, EyeOff, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 import { loginSchema, type LoginInput } from "@/lib/validations/auth"
 
 export default function LoginForm() {
-  const router = useRouter()
   const searchParams = useSearchParams()
   const callbackUrl = searchParams.get("callbackUrl") || "/dashboard"
   const [showPassword, setShowPassword] = useState(false)
@@ -41,8 +40,7 @@ export default function LoginForm() {
       }
 
       toast.success("Connexion réussie !")
-      router.push(callbackUrl)
-      router.refresh()
+      window.location.href = callbackUrl
     } catch {
       toast.error("Une erreur est survenue")
     } finally {
