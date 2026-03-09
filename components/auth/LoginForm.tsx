@@ -12,7 +12,9 @@ import { loginSchema, type LoginInput } from "@/lib/validations/auth"
 
 export default function LoginForm() {
   const searchParams = useSearchParams()
-  const callbackUrl = searchParams.get("callbackUrl") || "/dashboard"
+  const raw = searchParams.get("callbackUrl") || "/"
+  // Sanitize: only use the path, never a full URL (prevents localhost bleed on prod)
+  const callbackUrl = raw.startsWith("/") ? raw : "/"
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [isMicrosoftLoading, setIsMicrosoftLoading] = useState(false)
