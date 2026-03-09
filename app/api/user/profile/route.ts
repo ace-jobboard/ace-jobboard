@@ -22,8 +22,6 @@ export async function GET() {
       graduationYear: true,
       specialization: true,
       phone: true,
-      linkedIn: true,
-      portfolio: true,
       preferences: true,
       cvUrl: true,
       cvFileName: true,
@@ -74,8 +72,6 @@ export async function PUT(request: Request) {
     if (data.graduationYear !== undefined) updateData.graduationYear = data.graduationYear
     if (data.specialization !== undefined) updateData.specialization = data.specialization || null
     if (data.phone !== undefined) updateData.phone = data.phone || null
-    if (data.linkedIn !== undefined) updateData.linkedIn = data.linkedIn || null
-    if (data.portfolio !== undefined) updateData.portfolio = data.portfolio || null
 
     const user = await prisma.user.update({
       where: { id: session.user.id },
@@ -90,8 +86,6 @@ export async function PUT(request: Request) {
         graduationYear: true,
         specialization: true,
         phone: true,
-        linkedIn: true,
-        portfolio: true,
       },
     })
 
