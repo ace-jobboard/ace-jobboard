@@ -25,7 +25,7 @@ export async function GET(request: Request) {
     const where = {
       isActive:   true,
       isApproved: true,
-      NOT: { source: 'adzuna' },
+      NOT: [{ source: 'adzuna' }, { filiere: '_dump' }],
       ...(filiereFilter && { filiere: filiereFilter }),
       ...(niveau       && { niveau }),
       ...(region       && { region: { contains: region, mode: 'insensitive' as const } }),

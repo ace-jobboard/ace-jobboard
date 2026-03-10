@@ -17,7 +17,28 @@
       "Bash(\"C:\\\\Users\\\\Galip ATA HAMDAN\\\\AppData\\\\Local\\\\Microsoft\\\\WinGet\\\\Packages\\\\Ngrok.Ngrok_Microsoft.Winget.Source_8wekyb3d8bbwe\\\\ngrok.exe\" version)",
       "Bash(DATABASE_URL=\"postgresql://postgres:postgres@localhost:5432/ace_jobs_dev?schema=public\" npx tsx:*)",
       "Bash(npx tsc:*)",
-      "Bash(npm run build:*)"
+      "Bash(npm run build:*)",
+      "Bash(npx prisma migrate dev:*)",
+      "Bash(npx prisma db push:*)",
+      "Bash(npm run seed:*)",
+      "Bash(Remove-Item -Recurse -Force .next -ErrorAction SilentlyContinue)",
+      "Bash(node --version)",
+      "Bash(npx prisma --version)",
+      "Bash(node node_modules/.bin/prisma db push)",
+      "Bash(node node_modules/prisma/build/index.js db push)",
+      "Bash(node node_modules/prisma/build/index.js generate)",
+      "Bash(node node_modules/typescript/bin/tsc --noEmit --skipLibCheck)",
+      "WebFetch(domain:apify.com)",
+      "WebFetch(domain:api.apify.com)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:community.n8n.io)",
+      "WebFetch(domain:n8n.io)",
+      "Bash(npx dotenv-cli -e .env.local -- npx prisma migrate dev --name add_student_whitelist)",
+      "Bash(DIRECT_URL=\"postgresql://postgres.bmaqlmedthsbreyynova:Trkshdelight03\\\\!@aws-1-eu-west-1.pooler.supabase.com:6543/postgres\" npx prisma db push)",
+      "Bash(npx prisma generate)",
+      "Bash(node --import tsx/esm -e \":*)",
+      "Bash(APIFY_API_TOKEN=\"\" npx tsx scripts/fetch-tasks-now.ts)"
     ]
   }
 }

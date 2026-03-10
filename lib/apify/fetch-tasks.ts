@@ -1,5 +1,101 @@
 import { prisma } from '@/lib/db'
 import { APIFY_TASKS } from '@/config/tasks'
+import { classifyFiliere } from '@/lib/apify/classify'
+
+// ---------------------------------------------------------------------------
+// Source field mapping
+// ---------------------------------------------------------------------------
+
+type RawItem = Record<string, unknown>
+
+interface NormalizedFields {
+  title: string
+  company: string
+  location: string
+  description: string
+  url: string
+  contractTypeRaw: string
+  salary: string | null
+}
+
+interface SourceFieldMap {
+  title:           (item: RawItem) => string
+  company:         (item: RawItem) => string
+  location:        (item: RawItem) => string
+  description:     (item: RawItem) => string
+  url:             (item: RawItem) => string
+  contractTypeRaw: (item: RawItem) => string
+  salary:          (item: RawItem) => string | null
+}
+
+function str(v: unknown): string {
+  return v ? String(v) : ''
+}
+
+function first(item: RawItem, ...keys: string[]): string {
+  for (const k of keys) {
+    if (item[k]) return String(item[k])
+  }
+  return ''
+}
+
+/**
+ * Field map for shahidirfan/Jungle-Job-Scraper (Welcome to the Jungle / WTTJ actor).
+ * Docs: https://apify.com/shahidirfan/jungle-job-scraper
+ */
+const WTTJ_MAP: SourceFieldMap = {
+  title:           (item) => first(item, 'title', 'name'),
+  company:         (item) => str(item.company),
+  location:        (item) => first(item, 'location', 'city'),
+  description:     (item) => first(item, 'job_description', 'description', 'body'),
+  url:             (item) => first(item, 'url', 'websiteUrl'),
+  contractTypeRaw: (item) => first(item, 'contract_type', 'contractType'),
+  salary:          (item) => item.salary_yearly_minimum
+                               ? `${item.salary_yearly_minimum}€/an`
+                               : item.salary ? String(item.salary) : null,
+}
+
+/**
+ * Field map for curious_coder/linkedin-jobs-scraper (LinkedIn Jobs actor).
+ * Docs: https://apify.com/curious_coder/linkedin-jobs-scraper
+ *
+ * TODO: LinkedIn's `employmentType` field ("Internship", "Full-time", etc.) cannot
+ * reliably distinguish "Stage" from "Alternance" for French listings — it is passed
+ * through as-is and mapped downstream by extractContractType via title-keyword fallback.
+ */
+const LINKEDIN_MAP: SourceFieldMap = {
+  title:           (item) => str(item.title),
+  company:         (item) => str(item.companyName),
+  location:        (item) => str(item.location),
+  description:     (item) => first(item, 'descriptionHtml', 'descriptionText'),
+  url:             (item) => first(item, 'link', 'applyUrl'),
+  contractTypeRaw: (item) => str(item.employmentType),
+  salary:          (item) => item.salary
+                               ? String(item.salary)
+                               : item.salaryInfo ? String(item.salaryInfo) : null,
+}
+
+const SOURCE_MAPS: Record<string, SourceFieldMap> = {
+  wttj:      WTTJ_MAP,
+  linkedin:  LINKEDIN_MAP,
+}
+
+function normalizeItem(item: RawItem, source: string): NormalizedFields {
+  const map = SOURCE_MAPS[source] ?? WTTJ_MAP
+  return {
+    title:           map.title(item),
+    company:         map.company(item),
+    location:        map.location(item),
+    description:     map.description(item),
+    url:             map.url(item),
+    contractTypeRaw: map.contractTypeRaw(item),
+    salary:          map.salary(item),
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Filtering
+// ---------------------------------------------------------------------------
 
 const COMPETITOR_COMPANIES = [
   'ifae', 'iscod', 'galileo', 'esg sport', 'win sport school',
@@ -18,34 +114,6 @@ const COMPETITOR_PHRASES = [
   'recrutement étudiant', 'bachelor en alternance chez nous',
 ]
 
-const SCHOOL_RELEVANCE_KEYWORDS: Record<string, string[]> = {
-  'Sport Management': [
-    'sport', 'sportif', 'football', 'rugby', 'basket', 'tennis',
-    'fitness', 'événementiel sport', 'marketing sport', 'fédération',
-    'club sportif', 'ligue', 'stade', 'arena', 'esport', 'sponsoring sport',
-  ],
-  'Hôtellerie & Luxe': [
-    'hôtel', 'hôtellerie', 'restauration', 'luxe', 'réception', 'concierge',
-    'palace', 'resort', 'f&b', 'food and beverage', 'sommelier', 'chef',
-    'revenue management', 'hospitality', 'gastronomie',
-  ],
-  'Mode & Luxe': [
-    'mode', 'fashion', 'luxe', 'textile', 'styliste', 'retail', 'maroquinerie',
-    'prêt-à-porter', 'couture', 'merchandising', 'acheteur mode',
-    'showroom', 'collection', 'vêtement', 'accessoire',
-  ],
-  'Design': [
-    'design', 'graphiste', 'graphisme', 'ux', 'ui', 'direction artistique',
-    'web designer', 'designer', 'branding', 'identité visuelle',
-    'figma', 'adobe', 'indesign', 'illustrator', 'photoshop',
-  ],
-  'Illustration & Animation': [
-    'illustration', 'illustrateur', 'animation', 'animateur', 'motion design',
-    'motion designer', '2d', '3d', 'after effects', 'blender', 'maya',
-    'concept art', 'storyboard', 'jeu vidéo',
-  ],
-}
-
 function isCompetitor(company: string, description: string): boolean {
   const companyLower = (company || '').toLowerCase()
   const descLower = (description || '').toLowerCase()
@@ -55,12 +123,9 @@ function isCompetitor(company: string, description: string): boolean {
   )
 }
 
-function isRelevant(title: string, description: string, filiere: string): boolean {
-  const keywords = SCHOOL_RELEVANCE_KEYWORDS[filiere]
-  if (!keywords) return false
-  const text = `${title} ${description}`.toLowerCase()
-  return keywords.some(kw => text.includes(kw.toLowerCase()))
-}
+// ---------------------------------------------------------------------------
+// Extraction helpers
+// ---------------------------------------------------------------------------
 
 function extractRegion(location: string): string {
   if (!location) return 'France'
@@ -94,6 +159,10 @@ function extractNiveau(title: string, description: string): string {
   return 'Bac+3'
 }
 
+// ---------------------------------------------------------------------------
+// Apify fetching
+// ---------------------------------------------------------------------------
+
 async function getLastRunDataset(taskId: string): Promise<unknown[]> {
   // Read token at call-time so dotenv has already loaded it
   const token = process.env.APIFY_API_TOKEN
@@ -117,6 +186,10 @@ async function getLastRunDataset(taskId: string): Promise<unknown[]> {
   return Array.isArray(items) ? items : []
 }
 
+// ---------------------------------------------------------------------------
+// Main export
+// ---------------------------------------------------------------------------
+
 export async function fetchAllTasks(): Promise<{
   saved: number
   filtered: number
@@ -129,28 +202,20 @@ export async function fetchAllTasks(): Promise<{
   const errors: string[] = []
 
   for (const task of APIFY_TASKS) {
-    console.log(`[fetch-tasks] ${task.school} / "${task.keyword}"`)
+    console.log(`[fetch-tasks] ${task.school} / "${task.keyword}" (${task.source})`)
     try {
       const items = await getLastRunDataset(task.taskId)
       console.log(`[fetch-tasks]   → ${items.length} items`)
 
       for (const raw of items) {
-        const item = raw as Record<string, unknown>
-
-        // Field names from shahidirfan/Jungle-Job-Scraper (WTTJ actor)
-        const title = String(item.title ?? item.name ?? '')
-        const company = String(item.company ?? '')  // plain string, not an object
-        const location = String(item.location ?? item.city ?? '')
-        const description = String(item.job_description ?? item.description ?? item.body ?? '')
-        const url = String(item.url ?? item.websiteUrl ?? '')
-        const contractTypeRaw = String(item.contract_type ?? item.contractType ?? '')
-        const salary = item.salary_yearly_minimum
-          ? `${item.salary_yearly_minimum}€/an`
-          : item.salary ? String(item.salary) : null
+        const item = raw as RawItem
+        const { title, company, location, description, url, contractTypeRaw, salary } =
+          normalizeItem(item, task.source)
 
         if (!title || !url || !company) { filtered++; continue }
         if (isCompetitor(company, description)) { filtered++; continue }
-        if (!isRelevant(title, description, task.filiere)) { filtered++; continue }
+
+        const filiere = classifyFiliere(title, description, task.filiere)
 
         const job = {
           title:        title.trim().slice(0, 255),
@@ -158,12 +223,12 @@ export async function fetchAllTasks(): Promise<{
           description:  description.trim().slice(0, 10_000),
           location:     location.trim().slice(0, 255),
           region:       extractRegion(location),
-          filiere:      task.filiere,
+          filiere,
           niveau:       extractNiveau(title, description),
           contractType: extractContractType(contractTypeRaw, title),
           salary,
           url:          url.trim(),
-          source:       'wttj' as const,
+          source:       task.source,
           apifyActorId: task.taskId,
           isApproved:   true,
           isActive:     true,
@@ -181,7 +246,7 @@ export async function fetchAllTasks(): Promise<{
             await prisma.job.create({
               data: {
                 ...job,
-                sources:    ['wttj'],
+                sources:     [task.source],
                 firstSeenAt: new Date(),
                 lastSeenAt:  new Date(),
               },
