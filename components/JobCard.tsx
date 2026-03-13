@@ -51,7 +51,7 @@ export default function JobCard({
 
   return (
     <div
-      className={`rounded-2xl bg-white border border-gray-100 border-t-4 ${accentBorder} shadow-sm hover:shadow-lg transition-all duration-200 hover:-translate-y-0.5 flex flex-col`}
+      className={`rounded-2xl bg-white border border-gray-100 border-t-4 ${accentBorder} shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-1 flex flex-col`}
     >
       <div className="p-5 flex flex-col flex-1">
         {/* Header: avatar + title + save */}
@@ -65,7 +65,7 @@ export default function JobCard({
             <h3 className="text-sm font-semibold text-gray-900 leading-snug line-clamp-2">
               {job.title}
             </h3>
-            <p className="text-xs text-gray-400 mt-0.5 truncate">{job.company}</p>
+            <p className="text-xs text-gray-500 mt-0.5 truncate font-medium">{job.company}</p>
           </div>
           <SaveButton
             jobId={job.id}
@@ -101,14 +101,14 @@ export default function JobCard({
         </div>
 
         {/* Description */}
-        <p className="text-xs text-gray-500 line-clamp-3 leading-relaxed flex-1">
+        <p className="text-xs text-gray-600 line-clamp-3 leading-relaxed flex-1">
           {job.description}
         </p>
       </div>
 
       {/* Footer */}
-      <div className="flex justify-between items-center px-5 py-3 border-t border-gray-50">
-        <span className="text-xs text-gray-300">
+      <div className="flex justify-between items-center px-5 py-3.5 border-t border-gray-100">
+        <span className="text-xs text-gray-400">
           {new Date(job.createdAt).toLocaleDateString("fr-FR", {
             day: "numeric",
             month: "short",
@@ -118,7 +118,7 @@ export default function JobCard({
           href={job.url}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-xs font-semibold px-4 py-1.5 rounded-lg bg-gray-400 hover:bg-gray-500 text-white transition-colors"
+          className="text-xs font-semibold px-4 py-2 rounded-lg bg-teal hover:bg-teal-hover text-white transition-colors duration-150 cursor-pointer"
         >
           Postuler →
         </a>

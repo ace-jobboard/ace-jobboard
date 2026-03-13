@@ -115,7 +115,7 @@ export default function LoginForm() {
             type="email"
             placeholder="vous@ace-education.fr"
             {...register("email")}
-            className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition"
+            className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal/30 focus:border-teal transition-all duration-150"
           />
           {errors.email && (
             <p className="text-xs text-red-600">{errors.email.message}</p>
@@ -128,7 +128,7 @@ export default function LoginForm() {
             <label htmlFor="password" className="block text-sm font-medium text-gray-700">
               Mot de passe
             </label>
-            <Link href="/forgot-password" className="text-xs text-gray-500 hover:text-gray-900 hover:underline">
+            <Link href="/forgot-password" className="text-xs text-gray-500 hover:text-teal transition-colors duration-150 hover:underline">
               Mot de passe oublié ?
             </Link>
           </div>
@@ -138,7 +138,7 @@ export default function LoginForm() {
               type={showPassword ? "text" : "password"}
               placeholder="••••••••"
               {...register("password")}
-              className="w-full rounded-lg border border-gray-200 px-3 py-2.5 pr-10 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition"
+              className="w-full rounded-lg border border-gray-200 px-3 py-2.5 pr-10 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal/30 focus:border-teal transition-all duration-150"
             />
             <button
               type="button"
@@ -156,7 +156,7 @@ export default function LoginForm() {
         <button
           type="submit"
           disabled={isLoading}
-          className="w-full mt-2 flex items-center justify-center gap-2 bg-gray-900 hover:bg-gray-700 text-white font-semibold text-sm rounded-lg py-2.5 transition-colors disabled:opacity-60"
+          className="w-full mt-2 flex items-center justify-center gap-2 bg-teal hover:bg-teal-hover text-white font-semibold text-sm rounded-lg py-2.5 transition-colors duration-150 disabled:opacity-60 cursor-pointer"
         >
           {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
           Se connecter
@@ -165,7 +165,7 @@ export default function LoginForm() {
 
       <p className="text-center text-sm text-gray-500 mt-6">
         Pas encore de compte ?{" "}
-        <Link href="/register" className="font-semibold text-gray-900 hover:underline">
+        <Link href="/register" className="font-semibold text-teal hover:text-teal-hover hover:underline transition-colors duration-150">
           Créer un compte
         </Link>
       </p>

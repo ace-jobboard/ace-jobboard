@@ -1,34 +1,52 @@
 @import "tailwindcss";
 
+/* ─── Design tokens ──────────────────────────────────────────────────────── */
+
 :root {
+  /* Backgrounds */
   --background: #ffffff;
-  --foreground: #171717;
+  --background-subtle: #f8f9fc;
+  --foreground: #111827;
+
+  /* Semantic surfaces */
+  --color-card: #ffffff;
+  --color-card-border: #e5e7eb;
+  --color-muted-fg: #6b7280;
+
+  /* Focus ring */
+  --ring: #2aa38f;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-inter), var(--font-geist-sans), system-ui, sans-serif;
+  --font-heading: var(--font-poppins), var(--font-geist-sans), system-ui, sans-serif;
   --font-mono: var(--font-geist-mono);
 }
 
 @theme {
-  --color-navy: #1a2b47;
-  --color-teal: #2aa38f;
-  --color-light: #f5f6fa;
-}
+  /* Brand palette */
+  --color-navy:       #1a2b47;
+  --color-navy-hover: #243659;
+  --color-teal:       #2aa38f;
+  --color-teal-hover: #228a78;
+  --color-light:      #f8f9fc;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  /* Filiere accent colors */
+  --color-sport:    #16a34a;
+  --color-hotel:    #1e3a5f;
+  --color-mode:     #7c3aed;
+  --color-design:   #ea580c;
+  --color-anim:     #dc2626;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-inter), var(--font-geist-sans), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* ─── Keyframes ──────────────────────────────────────────────────────────── */

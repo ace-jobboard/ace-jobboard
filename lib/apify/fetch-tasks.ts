@@ -75,9 +75,41 @@ const LINKEDIN_MAP: SourceFieldMap = {
                                : item.salaryInfo ? String(item.salaryInfo) : null,
 }
 
+/**
+ * Field map for valig/indeed-jobs-scraper (Indeed Jobs actor).
+ * Docs: https://apify.com/valig/indeed-jobs-scraper
+ *
+ * Key field shapes from actor output:
+ *   employer   → { name: string }
+ *   location   → { city?: string; formatted?: string; label?: string }
+ *   jobTypes   → string[] (e.g. ["Alternance"], ["Stage"])
+ *   jobUrl     → canonical Indeed job page URL (preferred over `url`)
+ *   baseSalary → string | null (frequently absent)
+ */
+const INDEED_MAP: SourceFieldMap = {
+  title:           (item) => str(item.title),
+  company:         (item) => {
+    const emp = item.employer as { name?: string } | null | undefined
+    return str(emp?.name)
+  },
+  location:        (item) => {
+    const loc = item.location as { city?: string; formatted?: string; label?: string } | null | undefined
+    return str(loc?.city) || str(loc?.formatted) || str(loc?.label)
+  },
+  description:     (item) => str(item.description),
+  url:             (item) => first(item, 'jobUrl', 'url'),
+  contractTypeRaw: (item) => {
+    const types = item.jobTypes
+    if (Array.isArray(types) && types.length > 0) return types.map(String).join(', ')
+    return ''
+  },
+  salary:          (item) => item.baseSalary ? String(item.baseSalary) : null,
+}
+
 const SOURCE_MAPS: Record<string, SourceFieldMap> = {
-  wttj:      WTTJ_MAP,
-  linkedin:  LINKEDIN_MAP,
+  wttj:     WTTJ_MAP,
+  linkedin: LINKEDIN_MAP,
+  indeed:   INDEED_MAP,
 }
 
 function normalizeItem(item: RawItem, source: string): NormalizedFields {
@@ -203,6 +235,10 @@ export async function fetchAllTasks(): Promise<{
 
   for (const task of APIFY_TASKS) {
     console.log(`[fetch-tasks] ${task.school} / "${task.keyword}" (${task.source})`)
+    if (!task.taskId) {
+      console.log(`[fetch-tasks]   → no taskId yet, skipping`)
+      continue
+    }
     try {
       const items = await getLastRunDataset(task.taskId)
       console.log(`[fetch-tasks]   → ${items.length} items`)

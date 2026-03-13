@@ -86,10 +86,10 @@ export default function Home() {
     jobs.filter((j) => j.filiere === filiere).length
 
   return (
-    <main className="min-h-screen bg-slate-50">
+    <main className="min-h-screen bg-light">
       {/* Sticky header + filters */}
       <div className="sticky top-0 z-50">
-        <header className="bg-gray-900 text-white shadow-lg">
+        <header className="bg-navy text-white shadow-lg">
           <div className="container mx-auto px-4 py-3">
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-4">
@@ -101,10 +101,10 @@ export default function Home() {
                   className="h-11 w-auto object-contain"
                   priority
                 />
-                <div className="hidden md:block h-7 border-l border-gray-600" />
+                <div className="hidden md:block h-7 border-l border-white/20" />
                 <div className="hidden md:block">
                   <p className="text-sm font-semibold text-white leading-tight">Job Board</p>
-                  <p className="text-xs text-gray-400">Stages · Alternances · Apprentissage</p>
+                  <p className="text-xs text-white/50">Stages · Alternances · Apprentissage</p>
                 </div>
               </div>
               <div className="flex items-center gap-3">
@@ -112,7 +112,7 @@ export default function Home() {
                   <>
                     <Link
                       href="/dashboard"
-                      className="hidden md:inline-flex text-sm text-gray-300 hover:text-white border border-gray-600 hover:border-white px-3 py-1.5 rounded-lg transition-colors"
+                      className="hidden md:inline-flex text-sm text-white/70 hover:text-white border border-white/20 hover:border-white/50 px-3 py-1.5 rounded-lg transition-all duration-150"
                     >
                       Mon espace
                     </Link>
@@ -122,11 +122,11 @@ export default function Home() {
                   <>
                     <Link
                       href="/login"
-                      className="text-sm text-gray-300 hover:text-white transition-colors"
+                      className="text-sm text-white/70 hover:text-white transition-colors duration-150"
                     >
                       Connexion
                     </Link>
-                    <Button asChild size="sm" className="bg-white text-gray-900 hover:bg-gray-100 font-semibold">
+                    <Button asChild size="sm" className="bg-teal hover:bg-teal-hover text-white font-semibold transition-colors duration-150 cursor-pointer">
                       <Link href="/register">Créer un compte</Link>
                     </Button>
                   </>
@@ -147,7 +147,7 @@ export default function Home() {
       <div className="container mx-auto px-4 py-8">
         {/* Stats — scrolls with content */}
         {!loading && !error && jobs.length > 0 && (
-          <div className="animate-fade-up bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-8">
+          <div className="animate-fade-up bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-8 hover:shadow-md transition-shadow duration-200">
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-4">
               Aperçu des offres
             </p>
@@ -221,7 +221,7 @@ export default function Home() {
         )}
       </div>
 
-      <footer className="bg-gray-900 text-gray-500 py-8 mt-12">
+      <footer className="bg-navy text-white/40 py-8 mt-12">
         <div className="container mx-auto px-4 text-center">
           <Image
             src="/ace-logo.png"
@@ -230,11 +230,11 @@ export default function Home() {
             height={32}
             className="h-8 w-auto object-contain mx-auto mb-3 opacity-60"
           />
-          <p className="text-xs">
+          <p className="text-xs text-white/50">
             &copy; {new Date().getFullYear()} ACE Education &mdash; AMOS &bull; CMH &bull; EIDM
             &bull; ESDAC &bull; ENAAI
           </p>
-          <p className="text-xs mt-1 text-gray-600">
+          <p className="text-xs mt-1 text-white/30">
             Plateforme d&apos;offres de stages et alternances pour les étudiants ACE
           </p>
         </div>

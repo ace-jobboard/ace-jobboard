@@ -14,7 +14,8 @@
     "reset-db": "npx tsx scripts/reset-db.ts",
     "test-hubspot": "npx tsx scripts/test-hubspot.ts",
     "reclassify": "npx tsx scripts/reclassify-jobs.ts",
-    "create-admin": "npx tsx scripts/create-admin.ts"
+    "create-admin": "npx tsx scripts/create-admin.ts",
+    "create-indeed-tasks": "npx tsx scripts/create-apify-tasks.ts"
   },
   "prisma": {
     "seed": "npx tsx prisma/seed.ts"

@@ -1,6 +1,7 @@
 'use client'
 
 import { JobFilters } from '@/types/job'
+import { Search } from 'lucide-react'
 
 interface FiltersProps {
   onFilterChange: (filters: JobFilters) => void
@@ -36,19 +37,23 @@ export default function Filters({ onFilterChange }: FiltersProps) {
     'Bretagne',
   ]
 
-  const inputClass = "border border-gray-300 bg-white rounded-lg px-3 py-2 text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:border-gray-500 focus:ring-1 focus:ring-gray-300 transition-colors w-full"
+  const selectClass = "border border-gray-200 bg-white rounded-lg px-3 py-2 text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:border-teal focus:ring-2 focus:ring-teal/20 transition-all duration-150 w-full cursor-pointer appearance-none"
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
-      <input
-        type="text"
-        placeholder="Rechercher un poste, une entreprise..."
-        className={inputClass}
-        onChange={(e) => onFilterChange({ search: e.target.value })}
-      />
+      {/* Search with icon */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+        <input
+          type="text"
+          placeholder="Rechercher un poste, une entreprise..."
+          className="border border-gray-200 bg-white rounded-lg pl-9 pr-3 py-2 text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:border-teal focus:ring-2 focus:ring-teal/20 transition-all duration-150 w-full"
+          onChange={(e) => onFilterChange({ search: e.target.value })}
+        />
+      </div>
 
       <select
-        className={inputClass}
+        className={selectClass}
         onChange={(e) => onFilterChange({ filiere: e.target.value })}
       >
         <option value="">Toutes les filières</option>
@@ -58,7 +63,7 @@ export default function Filters({ onFilterChange }: FiltersProps) {
       </select>
 
       <select
-        className={inputClass}
+        className={selectClass}
         onChange={(e) => onFilterChange({ niveau: e.target.value })}
       >
         <option value="">Tous les niveaux</option>
@@ -68,7 +73,7 @@ export default function Filters({ onFilterChange }: FiltersProps) {
       </select>
 
       <select
-        className={inputClass}
+        className={selectClass}
         onChange={(e) => onFilterChange({ contractType: e.target.value })}
       >
         <option value="">Tous les contrats</option>
@@ -78,7 +83,7 @@ export default function Filters({ onFilterChange }: FiltersProps) {
       </select>
 
       <select
-        className={inputClass}
+        className={selectClass}
         onChange={(e) => onFilterChange({ region: e.target.value })}
       >
         <option value="">Toutes les régions</option>
@@ -89,4 +94,3 @@ export default function Filters({ onFilterChange }: FiltersProps) {
     </div>
   )
 }
-
