@@ -110,12 +110,6 @@ export default function Home() {
               <div className="flex items-center gap-3">
                 {status === "authenticated" && session?.user ? (
                   <>
-                    <Link
-                      href="/dashboard"
-                      className="hidden md:inline-flex text-sm text-white/70 hover:text-white border border-white/20 hover:border-white/50 px-3 py-1.5 rounded-lg transition-all duration-150"
-                    >
-                      Mon espace
-                    </Link>
                     <UserNav user={session.user} />
                   </>
                 ) : (

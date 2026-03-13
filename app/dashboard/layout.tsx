@@ -21,9 +21,9 @@ export default async function DashboardLayout({
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-light">
       {/* Navbar — matches main page */}
-      <header className="bg-gray-900 text-white shadow-lg sticky top-0 z-40">
+      <header className="bg-navy text-white shadow-lg sticky top-0 z-40">
         <div className="container mx-auto px-4 py-3">
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-4">
@@ -37,17 +37,17 @@ export default async function DashboardLayout({
                   priority
                 />
               </Link>
-              <div className="hidden md:block h-7 border-l border-gray-600" />
+              <div className="hidden md:block h-7 border-l border-white/20" />
               <nav className="hidden md:flex items-center gap-1">
                 <Link
                   href="/"
-                  className="text-sm text-gray-400 hover:text-white px-3 py-1.5 rounded-lg hover:bg-gray-800 transition-colors"
+                  className="text-sm text-white/60 hover:text-white px-3 py-1.5 rounded-lg hover:bg-white/10 transition-all duration-150"
                 >
                   Offres
                 </Link>
                 <Link
                   href="/dashboard"
-                  className="text-sm text-white font-medium px-3 py-1.5 rounded-lg bg-gray-700 transition-colors"
+                  className="text-sm text-white font-medium px-3 py-1.5 rounded-lg bg-white/10 transition-colors"
                 >
                   Mon espace
                 </Link>
@@ -62,7 +62,7 @@ export default async function DashboardLayout({
         {/* Page header */}
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-gray-900">Mon espace</h1>
-          <p className="text-gray-400 text-sm mt-0.5">
+          <p className="text-gray-500 text-sm mt-0.5">
             Gérez votre profil et vos offres sauvegardées
           </p>
         </div>

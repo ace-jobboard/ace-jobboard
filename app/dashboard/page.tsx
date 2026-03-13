@@ -75,10 +75,14 @@ export default async function DashboardPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {APIFY_TASKS.map((task) => (
-                <tr key={task.taskId} className="hover:bg-gray-50 transition-colors">
+              {APIFY_TASKS.map((task, i) => (
+                <tr key={`${task.source}-${task.school}-${i}`} className="hover:bg-gray-50 transition-colors">
                   <td className="px-5 py-3">
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${task.source === "linkedin" ? "bg-blue-50 text-blue-700" : "bg-orange-50 text-orange-700"}`}>
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                      task.source === "linkedin" ? "bg-blue-50 text-blue-700"
+                      : task.source === "indeed" ? "bg-violet-50 text-violet-700"
+                      : "bg-orange-50 text-orange-700"
+                    }`}>
                       {task.source.toUpperCase()}
                     </span>
                   </td>
