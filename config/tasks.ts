@@ -74,37 +74,37 @@ export const APIFY_TASKS: TaskConfig[] = [
   { taskId: 'a6g2L7ywazqV7uoaM', school: 'ENAAI', filiere: 'Illustration & Animation', keyword: 'Jeux Vidéo Graphisme',  contractType: 'both', source: 'linkedin' },
 
   // ─── AMOS — Sport Management (Indeed) ────────────────────────────────────
-  { taskId: '', school: 'AMOS', filiere: 'Sport Management', keyword: 'Marketing Sportif',               contractType: 'both', source: 'indeed' },
-  { taskId: '', school: 'AMOS', filiere: 'Sport Management', keyword: 'Communication Sport',             contractType: 'both', source: 'indeed' },
-  { taskId: '', school: 'AMOS', filiere: 'Sport Management', keyword: 'Événementiel Sport',              contractType: 'both', source: 'indeed' },
-  { taskId: '', school: 'AMOS', filiere: 'Sport Management', keyword: 'Développement Commercial Sport',  contractType: 'both', source: 'indeed' },
-  { taskId: '', school: 'AMOS', filiere: 'Sport Management', keyword: 'Sponsoring Sport',                contractType: 'both', source: 'indeed' },
+  { taskId: 'hYevWQwZv6oZ0bcFZ', school: 'AMOS', filiere: 'Sport Management', keyword: 'Marketing Sportif',               contractType: 'both', source: 'indeed' },
+  { taskId: '8PANUACfXxjVXuw99', school: 'AMOS', filiere: 'Sport Management', keyword: 'Communication Sport',             contractType: 'both', source: 'indeed' },
+  { taskId: 'QIJwVk6Mw9F1FT2ya', school: 'AMOS', filiere: 'Sport Management', keyword: 'Événementiel Sport',              contractType: 'both', source: 'indeed' },
+  { taskId: 'NjgPSoHQmVleXvwy1', school: 'AMOS', filiere: 'Sport Management', keyword: 'Développement Commercial Sport',  contractType: 'both', source: 'indeed' },
+  { taskId: 'Ck99P9kY1e0OgHAqs', school: 'AMOS', filiere: 'Sport Management', keyword: 'Sponsoring Sport',                contractType: 'both', source: 'indeed' },
 
   // ─── CMH — Hôtellerie & Luxe (Indeed) ────────────────────────────────────
-  { taskId: '', school: 'CMH', filiere: 'Hôtellerie & Luxe', keyword: 'Marketing Hôtellerie',       contractType: 'both', source: 'indeed' },
-  { taskId: '', school: 'CMH', filiere: 'Hôtellerie & Luxe', keyword: 'Communication Luxe',         contractType: 'both', source: 'indeed' },
-  { taskId: '', school: 'CMH', filiere: 'Hôtellerie & Luxe', keyword: 'Revenue Management',         contractType: 'both', source: 'indeed' },
-  { taskId: '', school: 'CMH', filiere: 'Hôtellerie & Luxe', keyword: 'Événementiel Luxe',          contractType: 'both', source: 'indeed' },
-  { taskId: '', school: 'CMH', filiere: 'Hôtellerie & Luxe', keyword: 'Relations Clientèle Hôtel',  contractType: 'both', source: 'indeed' },
+  { taskId: 'lh009YdgRwPpeZvpn', school: 'CMH', filiere: 'Hôtellerie & Luxe', keyword: 'Marketing Hôtellerie',       contractType: 'both', source: 'indeed' },
+  { taskId: 'LtIgcad09m3mMqv4K', school: 'CMH', filiere: 'Hôtellerie & Luxe', keyword: 'Communication Luxe',         contractType: 'both', source: 'indeed' },
+  { taskId: 'Ad07eri4qqm6IjzmG', school: 'CMH', filiere: 'Hôtellerie & Luxe', keyword: 'Revenue Management',         contractType: 'both', source: 'indeed' },
+  { taskId: 'D5tpi99FXQvt3IGmI', school: 'CMH', filiere: 'Hôtellerie & Luxe', keyword: 'Événementiel Luxe',          contractType: 'both', source: 'indeed' },
+  { taskId: 'chZvr0kWvqkFc2WL8', school: 'CMH', filiere: 'Hôtellerie & Luxe', keyword: 'Relations Clientèle Hôtel',  contractType: 'both', source: 'indeed' },
 
   // ─── EIDM — Mode & Luxe (Indeed) ─────────────────────────────────────────
-  { taskId: '', school: 'EIDM', filiere: 'Mode & Luxe', keyword: 'Marketing Mode',           contractType: 'both', source: 'indeed' },
-  { taskId: '', school: 'EIDM', filiere: 'Mode & Luxe', keyword: 'Communication Mode Luxe',  contractType: 'both', source: 'indeed' },
-  { taskId: '', school: 'EIDM', filiere: 'Mode & Luxe', keyword: 'Chef de Projet Mode',      contractType: 'both', source: 'indeed' },
-  { taskId: '', school: 'EIDM', filiere: 'Mode & Luxe', keyword: 'Digital Marketing Luxe',   contractType: 'both', source: 'indeed' },
-  { taskId: '', school: 'EIDM', filiere: 'Mode & Luxe', keyword: 'Merchandising Mode',       contractType: 'both', source: 'indeed' },
+  { taskId: 'PDP0dtcRS24Ds68bz', school: 'EIDM', filiere: 'Mode & Luxe', keyword: 'Marketing Mode',           contractType: 'both', source: 'indeed' },
+  { taskId: 'nUE8jrQ1wsR1Dhcxl', school: 'EIDM', filiere: 'Mode & Luxe', keyword: 'Communication Mode Luxe',  contractType: 'both', source: 'indeed' },
+  { taskId: '1P7AxftlwcXgTMl89', school: 'EIDM', filiere: 'Mode & Luxe', keyword: 'Chef de Projet Mode',      contractType: 'both', source: 'indeed' },
+  { taskId: 'xQ08x74AQayNybzNU', school: 'EIDM', filiere: 'Mode & Luxe', keyword: 'Digital Marketing Luxe',   contractType: 'both', source: 'indeed' },
+  { taskId: 'RSpUCmRbDjVb6UCA0', school: 'EIDM', filiere: 'Mode & Luxe', keyword: 'Merchandising Mode',       contractType: 'both', source: 'indeed' },
 
   // ─── ESDAC — Design (Indeed) ──────────────────────────────────────────────
-  { taskId: '', school: 'ESDAC', filiere: 'Design', keyword: 'Graphiste',            contractType: 'both', source: 'indeed' },
-  { taskId: '', school: 'ESDAC', filiere: 'Design', keyword: 'Designer Graphique',   contractType: 'both', source: 'indeed' },
-  { taskId: '', school: 'ESDAC', filiere: 'Design', keyword: 'Direction Artistique', contractType: 'both', source: 'indeed' },
-  { taskId: '', school: 'ESDAC', filiere: 'Design', keyword: 'UX Design',            contractType: 'both', source: 'indeed' },
-  { taskId: '', school: 'ESDAC', filiere: 'Design', keyword: 'Motion Design',        contractType: 'both', source: 'indeed' },
+  { taskId: 'Dj4xRyhUK3zFqSDuR', school: 'ESDAC', filiere: 'Design', keyword: 'Graphiste',            contractType: 'both', source: 'indeed' },
+  { taskId: 'NmzO7t7eAbuKtpdEA', school: 'ESDAC', filiere: 'Design', keyword: 'Designer Graphique',   contractType: 'both', source: 'indeed' },
+  { taskId: 'V1PNv9KnquBfBDvRV', school: 'ESDAC', filiere: 'Design', keyword: 'Direction Artistique', contractType: 'both', source: 'indeed' },
+  { taskId: 'lC6K9ZL4okBkarQWr', school: 'ESDAC', filiere: 'Design', keyword: 'UX Design',            contractType: 'both', source: 'indeed' },
+  { taskId: 'tX6iYuStTY68vkjPu', school: 'ESDAC', filiere: 'Design', keyword: 'Motion Design',        contractType: 'both', source: 'indeed' },
 
   // ─── ENAAI — Illustration & Animation (Indeed) ───────────────────────────
-  { taskId: '', school: 'ENAAI', filiere: 'Illustration & Animation', keyword: 'Illustrateur',   contractType: 'both', source: 'indeed' },
-  { taskId: '', school: 'ENAAI', filiere: 'Illustration & Animation', keyword: 'Animateur 2D 3D', contractType: 'both', source: 'indeed' },
-  { taskId: '', school: 'ENAAI', filiere: 'Illustration & Animation', keyword: 'Concept Artist',  contractType: 'both', source: 'indeed' },
-  { taskId: '', school: 'ENAAI', filiere: 'Illustration & Animation', keyword: 'Character Design', contractType: 'both', source: 'indeed' },
-  { taskId: '', school: 'ENAAI', filiere: 'Illustration & Animation', keyword: 'Motion Designer',  contractType: 'both', source: 'indeed' },
+  { taskId: 'DNCXAp75hwfHZtN2p', school: 'ENAAI', filiere: 'Illustration & Animation', keyword: 'Illustrateur',   contractType: 'both', source: 'indeed' },
+  { taskId: 'MdQStiTPbnSKKcu8d', school: 'ENAAI', filiere: 'Illustration & Animation', keyword: 'Animateur 2D 3D', contractType: 'both', source: 'indeed' },
+  { taskId: 'eLCx6n4KgRcIU46v1', school: 'ENAAI', filiere: 'Illustration & Animation', keyword: 'Concept Artist',  contractType: 'both', source: 'indeed' },
+  { taskId: '5dq6dihAyXgW5WZqE', school: 'ENAAI', filiere: 'Illustration & Animation', keyword: 'Character Design', contractType: 'both', source: 'indeed' },
+  { taskId: '9EETbssC2FjcKkGAp', school: 'ENAAI', filiere: 'Illustration & Animation', keyword: 'Motion Designer',  contractType: 'both', source: 'indeed' },
 ]

@@ -17,7 +17,13 @@ function sleep(ms: number): Promise<void> {
  * e.g. "Marketing Sportif", "AMOS" → "Indeed-Marketing-Sportif-AMOS"
  */
 function toTaskName(keyword: string, school: string): string {
-  const slug = keyword.trim().replace(/\s+/g, '-')
+  const slug = keyword
+    .trim()
+    .normalize('NFD')                  // decompose é → e + combining accent
+    .replace(/[\u0300-\u036f]/g, '')   // strip combining accents
+    .replace(/[^a-zA-Z0-9\s-]/g, '')   // drop any remaining non-ASCII
+    .trim()
+    .replace(/\s+/g, '-')
   return `Indeed-${slug}-${school}`
 }
 
@@ -32,13 +38,13 @@ async function createApifyTask(name: string, keyword: string): Promise<string> {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      actorId: ACTOR_ID,
+      actId: ACTOR_ID,
       name,
       input: {
         keyword,
         location: 'France',
         maxItems: 100,
-        country: 'FR',
+        country: 'fr',
       },
     }),
   })
