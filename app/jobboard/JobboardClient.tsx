@@ -6,7 +6,7 @@ import Link from "next/link"
 import Image from "next/image"
 import JobCard from "@/components/JobCard"
 import EmptyState from "@/components/ui/empty-state"
-import { Search } from "lucide-react"
+import { Search, Loader2 } from "lucide-react"
 import { Job } from "@/types/job"
 
 interface SerializedJob {
@@ -49,7 +49,8 @@ function pill(
   options: string[],
   value: string,
   set: (v: string) => void,
-  setPage: (p: number) => void
+  setPage: (p: number) => void,
+  setLoadMore: (b: boolean) => void
 ) {
   return options.map((opt) => (
     <button
@@ -57,6 +58,7 @@ function pill(
       onClick={() => {
         set(value === opt ? "" : opt)
         setPage(1)
+        setLoadMore(false)
       }}
       className={`px-3 py-1 rounded-full text-xs font-medium transition-colors border ${
         value === opt
@@ -83,10 +85,10 @@ export default function JobboardClient({
   const [school, setSchool] = useState(() => {
     const paramSchool = searchParams.get("school")
     if (paramSchool) return paramSchool
-    // Default to userSchool only on first load when no school param is present
     return userSchool ?? ""
   })
   const [page, setPage] = useState(parseInt(searchParams.get("page") ?? "1", 10))
+  const [loadMore, setLoadMore] = useState(false)
 
   const [jobs, setJobs] = useState<Job[]>(initialJobs.map(toJob))
   const [total, setTotal] = useState(initialTotal)
@@ -132,12 +134,17 @@ export default function JobboardClient({
         jobs?: SerializedJob[]
         total?: number
       }
-      setJobs((data.jobs ?? []).map(toJob))
+      const newJobs = (data.jobs ?? []).map(toJob)
+      if (loadMore) {
+        setJobs((prev) => [...prev, ...newJobs])
+      } else {
+        setJobs(newJobs)
+      }
       setTotal(data.total ?? 0)
     } finally {
       setLoading(false)
     }
-  }, [page, debouncedSearch, contract, school, sortBy])
+  }, [page, debouncedSearch, contract, school, sortBy, loadMore])
 
   useEffect(() => {
     if (isFirstLoad.current) {
@@ -146,6 +153,11 @@ export default function JobboardClient({
     }
     void fetchJobs()
   }, [fetchJobs])
+
+  function handleLoadMore() {
+    setLoadMore(true)
+    setPage((p) => p + 1)
+  }
 
   return (
     <div className="min-h-screen bg-light">
@@ -199,6 +211,7 @@ export default function JobboardClient({
               onChange={(e) => {
                 setSearch(e.target.value)
                 setPage(1)
+                setLoadMore(false)
               }}
             />
           </div>
@@ -208,6 +221,7 @@ export default function JobboardClient({
             onChange={(e) => {
               setContract(e.target.value)
               setPage(1)
+              setLoadMore(false)
             }}
           >
             <option value="">Tous les contrats</option>
@@ -217,7 +231,11 @@ export default function JobboardClient({
             <option value="CDD">CDD</option>
           </select>
           <button
-            onClick={() => void fetchJobs()}
+            onClick={() => {
+              setLoadMore(false)
+              setPage(1)
+              void fetchJobs()
+            }}
             className="px-5 py-2.5 bg-teal text-white rounded-lg text-sm font-medium hover:bg-teal/90 transition-colors flex-shrink-0"
           >
             Rechercher
@@ -242,9 +260,9 @@ export default function JobboardClient({
         {/* Filter pills */}
         <div className="bg-white border-b py-3 px-4 mb-6 rounded-lg flex flex-wrap gap-2 items-center">
           <span className="text-xs text-gray-400 self-center mr-1">École :</span>
-          {pill(FILIERES, school, setSchool, setPage)}
+          {pill(FILIERES, school, setSchool, setPage, setLoadMore)}
           <span className="text-xs text-gray-400 self-center ml-3 mr-1">Contrat :</span>
-          {pill(CONTRACTS, contract, setContract, setPage)}
+          {pill(CONTRACTS, contract, setContract, setPage, setLoadMore)}
         </div>
 
         {/* Results count + sort */}
@@ -255,6 +273,7 @@ export default function JobboardClient({
             onChange={(e) => {
               setSortBy(e.target.value)
               setPage(1)
+              setLoadMore(false)
             }}
             className="text-xs border border-gray-200 rounded px-2 py-1 focus:outline-none text-gray-600"
           >
@@ -265,7 +284,7 @@ export default function JobboardClient({
         </div>
 
         {/* Job cards */}
-        {loading ? (
+        {loading && !loadMore ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {Array.from({ length: 6 }).map((_, i) => (
               <div
@@ -292,13 +311,15 @@ export default function JobboardClient({
           </div>
         )}
 
-        {/* Pagination */}
+        {/* Load More */}
         {jobs.length < total && (
           <div className="text-center mt-8">
             <button
-              onClick={() => setPage((p) => p + 1)}
-              className="px-6 py-2.5 border border-teal text-teal rounded-lg text-sm font-medium hover:bg-teal hover:text-white transition-colors"
+              onClick={handleLoadMore}
+              disabled={loading && loadMore}
+              className="px-6 py-2.5 border border-teal text-teal rounded-lg text-sm font-medium hover:bg-teal hover:text-white transition-colors flex items-center gap-2 mx-auto disabled:opacity-60"
             >
+              {loading && loadMore && <Loader2 size={14} className="animate-spin" />}
               Charger plus
             </button>
           </div>

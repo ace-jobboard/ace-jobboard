@@ -7,6 +7,7 @@ import StatusBadge from "@/components/ui/status-badge"
 import Link from "next/link"
 import OfferActions from "@/components/offers/OfferActions"
 import OfferMemo from "@/components/offers/OfferMemo"
+import { sanitizeHtml } from "@/lib/sanitize"
 
 export default async function OfferDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const session = await auth()
@@ -27,11 +28,20 @@ export default async function OfferDetailPage({ params }: { params: Promise<{ id
     { label: posted,                    variant: "navy"  as const },
   ]
 
+  const sanitizedDescription = job.description ? sanitizeHtml(job.description) : ""
+
+  const related = await prisma.job.findMany({
+    where: { filiere: job.filiere, contractType: job.contractType, id: { not: job.id }, isActive: true },
+    take: 3,
+    orderBy: { createdAt: "desc" },
+    select: { id: true, title: true, company: true, location: true, filiere: true },
+  })
+
   return (
     <AppShell title="Offer detail" userName={session.user.name ?? "Admin"}>
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-gray-400 mb-6">
-        <Link href="/offers" className="hover:text-navy transition-colors">← Offers</Link>
+        <Link href="/offers" className="hover:text-navy transition-colors">← Retour aux offres</Link>
         <span>/</span>
         <span className="text-gray-600 truncate max-w-xs">{job.title}</span>
       </div>
@@ -77,7 +87,12 @@ export default async function OfferDetailPage({ params }: { params: Promise<{ id
             {job.tags && job.tags.length > 0 && (
               <div className="mt-5 flex flex-wrap gap-2">
                 {job.tags.map((tag) => (
-                  <StatusBadge key={tag} label={tag} variant="grey" />
+                  <span
+                    key={tag}
+                    className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border border-gray-200 text-gray-600"
+                  >
+                    {tag}
+                  </span>
                 ))}
               </div>
             )}
@@ -86,10 +101,14 @@ export default async function OfferDetailPage({ params }: { params: Promise<{ id
           {/* Description */}
           <div className="bg-white rounded-lg border border-gray-100 p-6">
             <h2 className="text-sm font-semibold text-navy uppercase tracking-wide mb-4">Description</h2>
-            <div
-              className="prose prose-sm max-w-none text-gray-600 [&_ul]:list-disc [&_ul]:pl-4 [&_li]:mb-1"
-              dangerouslySetInnerHTML={{ __html: job.description }}
-            />
+            {sanitizedDescription ? (
+              <div
+                className="prose prose-sm max-w-none text-gray-600 [&_ul]:list-disc [&_ul]:pl-4 [&_li]:mb-1"
+                dangerouslySetInnerHTML={{ __html: sanitizedDescription }}
+              />
+            ) : (
+              <p className="text-gray-400 italic text-sm">Aucune description disponible.</p>
+            )}
           </div>
         </div>
 
@@ -121,6 +140,30 @@ export default async function OfferDetailPage({ params }: { params: Promise<{ id
           <OfferMemo id={job.id} initialMemo={job.memo ?? ""} />
         </div>
       </div>
+
+      {/* Related offers */}
+      {related.length > 0 && (
+        <div className="mt-8">
+          <h2 className="text-sm font-semibold text-navy uppercase tracking-wide mb-4">Offres similaires</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {related.map((r) => (
+              <div key={r.id} className="bg-white rounded-lg border border-gray-100 p-4 hover:shadow-sm transition-shadow">
+                <p className="font-medium text-gray-900 text-sm truncate">{r.title}</p>
+                <p className="text-xs text-gray-500 mt-0.5 truncate">{r.company}</p>
+                {r.location && (
+                  <p className="text-xs text-gray-400 mt-1 truncate">{r.location}</p>
+                )}
+                <Link
+                  href={`/offers/${r.id}`}
+                  className="inline-block mt-3 text-xs font-medium text-teal hover:underline"
+                >
+                  Voir →
+                </Link>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </AppShell>
   )
 }

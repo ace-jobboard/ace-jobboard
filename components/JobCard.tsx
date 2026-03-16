@@ -1,5 +1,8 @@
+import Link from "next/link"
 import { Job } from "@/types/job"
 import SaveButton from "@/components/ui/save-button"
+import AvatarCircle from "@/components/ui/avatar-circle"
+import { relativeTime } from "@/lib/utils"
 
 interface JobCardProps {
   job: Job
@@ -23,19 +26,17 @@ const filiereAccentBorder: Record<string, string> = {
   "Illustration & Animation": "border-t-red-500",
 }
 
-const filiereAvatarBg: Record<string, string> = {
-  "Sport Management":        "bg-green-600",
-  "Hôtellerie & Luxe":       "bg-blue-900",
-  "Mode & Luxe":             "bg-purple-600",
-  Design:                    "bg-orange-500",
-  "Illustration & Animation": "bg-red-600",
-}
-
 const contractBadgeColors: Record<string, string> = {
   Alternance: "bg-green-50 text-green-700 ring-green-100",
   Stage: "bg-orange-50 text-orange-700 ring-orange-100",
   Apprentissage: "bg-cyan-50 text-cyan-700 ring-cyan-100",
   "Contrat de professionnalisation": "bg-teal-50 text-teal-700 ring-teal-100",
+}
+
+const SOURCE_BADGES: Record<string, { label: string; className: string }> = {
+  wttj:     { label: 'WTTJ',     className: 'bg-orange-100 text-orange-700' },
+  linkedin: { label: 'LinkedIn', className: 'bg-blue-100 text-blue-700' },
+  indeed:   { label: 'Indeed',   className: 'bg-green-100 text-green-700' },
 }
 
 export default function JobCard({
@@ -46,25 +47,29 @@ export default function JobCard({
   const badgeColors = filiereBadgeColors[job.filiere] || "bg-gray-50 text-gray-700 ring-gray-100"
   const contractColors = contractBadgeColors[job.contractType] || "bg-gray-50 text-gray-700 ring-gray-100"
   const accentBorder = filiereAccentBorder[job.filiere] || "border-t-gray-300"
-  const avatarBg = filiereAvatarBg[job.filiere] || "bg-gray-500"
   const isSaved = savedJobIds.includes(job.id)
+  const sourceBadge = SOURCE_BADGES[job.source]
+  const locationDisplay = job.location.length > 25 ? job.location.slice(0, 25) + '…' : job.location
 
   return (
     <div
       className={`rounded-2xl bg-white border border-gray-100 border-t-4 ${accentBorder} shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-1 flex flex-col`}
     >
       <div className="p-5 flex flex-col flex-1">
-        {/* Header: avatar + title + save */}
+        {/* Header: avatar + title + save + source badge */}
         <div className="flex items-start gap-3 mb-4">
-          <div
-            className={`w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-base shrink-0 ${avatarBg}`}
-          >
-            {job.company.charAt(0).toUpperCase()}
-          </div>
+          <AvatarCircle name={job.company} size="sm" />
           <div className="flex-1 min-w-0">
-            <h3 className="text-sm font-semibold text-gray-900 leading-snug line-clamp-2">
-              {job.title}
-            </h3>
+            <div className="flex items-start justify-between gap-2">
+              <h3 className="text-sm font-semibold text-gray-900 leading-snug line-clamp-2 flex-1">
+                {job.title}
+              </h3>
+              {sourceBadge && (
+                <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded shrink-0 ${sourceBadge.className}`}>
+                  {sourceBadge.label}
+                </span>
+              )}
+            </div>
             <p className="text-xs text-gray-500 mt-0.5 truncate font-medium">{job.company}</p>
           </div>
           <SaveButton
@@ -97,7 +102,7 @@ export default function JobCard({
               d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
             />
           </svg>
-          <span>{job.location}</span>
+          <span>{locationDisplay}</span>
         </div>
 
         {/* Description */}
@@ -109,19 +114,14 @@ export default function JobCard({
       {/* Footer */}
       <div className="flex justify-between items-center px-5 py-3.5 border-t border-gray-100">
         <span className="text-xs text-gray-400">
-          {new Date(job.createdAt).toLocaleDateString("fr-FR", {
-            day: "numeric",
-            month: "short",
-          })}
+          {relativeTime(job.createdAt)}
         </span>
-        <a
-          href={job.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-xs font-semibold px-4 py-2 rounded-lg bg-teal hover:bg-teal-hover text-white transition-colors duration-150 cursor-pointer"
+        <Link
+          href={`/offers/${job.id}`}
+          className="text-xs font-semibold px-4 py-2 rounded-lg bg-teal hover:bg-teal-hover text-white transition-colors duration-150"
         >
-          Postuler →
-        </a>
+          Voir l&apos;offre →
+        </Link>
       </div>
     </div>
   )

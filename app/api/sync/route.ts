@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { auth } from "@/auth"
+import { prisma } from "@/lib/db"
 import { fetchAllTasks } from "@/lib/apify/fetch-tasks"
 
 export async function POST() {
@@ -14,6 +15,21 @@ export async function POST() {
     const result = await fetchAllTasks()
     const durationMs = Date.now() - startMs
     const fetched = result.saved + result.duplicates + result.filtered
+
+    await prisma.scrapeRun.create({
+      data: {
+        startedAt:   new Date(Date.now() - durationMs),
+        completedAt: new Date(),
+        jobsFound:   fetched,
+        jobsSaved:   result.saved,
+        jobsFiltered: result.filtered,
+        duplicates:  result.duplicates,
+        error:       result.errors.length > 0 ? result.errors.join("; ") : null,
+        source:      "all",
+        school:      "all",
+        status:      result.errors.length > 0 ? "partial" : "success",
+      },
+    })
 
     return NextResponse.json({
       totals: {

@@ -7,10 +7,13 @@ import StatusBadge from "@/components/ui/status-badge"
 import { Briefcase, CheckCircle, Clock, RefreshCw, Globe } from "lucide-react"
 import DashboardCharts from "@/components/dashboard/DashboardCharts"
 import { APIFY_TASKS } from "@/config/tasks"
+import Link from "next/link"
 
 export default async function DashboardPage() {
   const session = await auth()
   if (!session?.user) redirect("/login")
+
+  const isAdmin = (session.user as { role?: string }).role === "ADMIN"
 
   const [totalJobs, activeJobs, pendingApproval, scrapeRuns] = await Promise.all([
     prisma.job.count({ where: { filiere: { not: "_dump" } } }),
@@ -19,7 +22,7 @@ export default async function DashboardPage() {
     prisma.scrapeRun.findFirst({ orderBy: { completedAt: "desc" } }),
   ])
 
-  const [byFiliere, byContract, bySources] = await Promise.all([
+  const [byFiliere, byContract, bySources, recentRuns] = await Promise.all([
     prisma.job.groupBy({
       by: ["filiere"],
       _count: true,
@@ -35,6 +38,10 @@ export default async function DashboardPage() {
       _count: true,
       where: { isActive: true, filiere: { not: "_dump" } },
     }),
+    prisma.scrapeRun.findMany({
+      orderBy: { startedAt: "desc" },
+      take: 5,
+    }),
   ])
 
   const lastUpdated = scrapeRuns?.completedAt
@@ -49,6 +56,19 @@ export default async function DashboardPage() {
     acc[task.source].push(task)
     return acc
   }, {})
+
+  function statusVariant(status: string): "green" | "orange" | "red" {
+    if (status === "success") return "green"
+    if (status === "partial") return "orange"
+    return "red"
+  }
+
+  function formatDuration(startedAt: Date, completedAt: Date | null): string {
+    if (!completedAt) return "—"
+    const secs = Math.round((completedAt.getTime() - startedAt.getTime()) / 1000)
+    if (secs < 60) return `${secs}s`
+    return `${Math.floor(secs / 60)}m ${secs % 60}s`
+  }
 
   return (
     <AppShell title="Dashboard" userName={session.user.name ?? "Admin"}>
@@ -111,6 +131,57 @@ export default async function DashboardPage() {
               })}
             </tbody>
           </table>
+        </div>
+      </div>
+
+      {/* Sync history */}
+      <div className="bg-white rounded-lg shadow-sm border border-gray-100 mt-6">
+        <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-navy uppercase tracking-wide">Historique de synchronisation</h2>
+          {isAdmin && (
+            <Link href="/admin" className="text-xs text-teal hover:underline">Voir tout →</Link>
+          )}
+        </div>
+        <div className="overflow-x-auto">
+          {recentRuns.length === 0 ? (
+            <p className="text-sm text-gray-400 px-5 py-4">Aucun historique de synchronisation.</p>
+          ) : (
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-xs uppercase tracking-wide text-gray-400 bg-gray-50">
+                  <th className="px-5 py-3 text-left">Date</th>
+                  <th className="px-5 py-3 text-left">Offres trouvées</th>
+                  <th className="px-5 py-3 text-left">Sauvegardées</th>
+                  <th className="px-5 py-3 text-left">Filtrées</th>
+                  <th className="px-5 py-3 text-left">Durée</th>
+                  <th className="px-5 py-3 text-left">Statut</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {recentRuns.map((run) => (
+                  <tr key={run.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-5 py-3 text-gray-500 text-xs whitespace-nowrap">
+                      {new Date(run.startedAt).toLocaleDateString("fr-FR", {
+                        day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit",
+                      })}
+                    </td>
+                    <td className="px-5 py-3 text-gray-700">{run.jobsFound}</td>
+                    <td className="px-5 py-3 text-gray-700">{run.jobsSaved}</td>
+                    <td className="px-5 py-3 text-gray-700">{run.jobsFiltered}</td>
+                    <td className="px-5 py-3 text-gray-500 text-xs">
+                      {formatDuration(run.startedAt, run.completedAt ?? null)}
+                    </td>
+                    <td className="px-5 py-3">
+                      <StatusBadge
+                        label={run.status}
+                        variant={statusVariant(run.status)}
+                      />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
       </div>
     </AppShell>

@@ -78,9 +78,17 @@ export async function GET(request: Request) {
       prisma.job.count({ where }),
     ])
 
-    // Strip rawData (large Apify blobs) before sending to client
+    // Strip rawData (large Apify blobs) before sending to client, serialize dates
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const jobs = rawJobs.map(({ rawData: _rawData, ...rest }) => rest)
+    const jobs = rawJobs.map(({ rawData: _rawData, ...rest }) => ({
+      ...rest,
+      createdAt:   rest.createdAt?.toISOString() ?? null,
+      updatedAt:   rest.updatedAt?.toISOString() ?? null,
+      firstSeenAt: rest.firstSeenAt?.toISOString() ?? null,
+      lastSeenAt:  rest.lastSeenAt?.toISOString() ?? null,
+      postedAt:    rest.postedAt?.toISOString() ?? null,
+      expiresAt:   rest.expiresAt?.toISOString() ?? null,
+    }))
 
     return NextResponse.json({
       jobs,
