@@ -9,12 +9,19 @@ import { Eye, EyeOff, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 import { registerSchema, type RegisterInput } from "@/lib/validations/auth"
 
+const SCHOOLS = ["AMOS", "CMH", "EIDM", "ESDAC", "ENAAI"] as const
+
+const WHITELIST_FRIENDLY =
+  "Votre email n'est pas reconnu dans notre système. Contactez votre école si vous pensez qu'il s'agit d'une erreur."
+
 export default function RegisterForm() {
   const router = useRouter()
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [hubspotError, setHubspotError] = useState<string | null>(null)
+  const [school, setSchool] = useState("")
+  const [schoolError, setSchoolError] = useState<string | null>(null)
 
   const {
     register,
@@ -25,29 +32,37 @@ export default function RegisterForm() {
   })
 
   async function onSubmit(data: RegisterInput) {
+    if (!school) {
+      setSchoolError("Veuillez sélectionner votre école")
+      return
+    }
+    setSchoolError(null)
     setIsLoading(true)
     setHubspotError(null)
     try {
       const response = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: JSON.stringify({ ...data, school }),
       })
 
-      const result = await response.json()
+      const result = await response.json() as { error?: string }
 
       if (response.status === 403) {
-        setHubspotError(result.error)
+        const errMsg = result.error ?? ""
+        setHubspotError(
+          errMsg.includes("reconnu") ? WHITELIST_FRIENDLY : errMsg
+        )
         return
       }
 
       if (!response.ok) {
-        toast.error(result.error || "Erreur lors de la création du compte")
+        toast.error(result.error ?? "Erreur lors de la création du compte")
         return
       }
 
       toast.success("Compte créé ! Vous pouvez maintenant vous connecter.")
-      router.push("/login")
+      router.push("/jobboard")
     } catch {
       toast.error("Une erreur est survenue")
     } finally {
@@ -63,6 +78,27 @@ export default function RegisterForm() {
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        {/* École */}
+        <div className="space-y-1">
+          <label htmlFor="school" className="block text-sm font-medium text-gray-700">
+            Votre école
+          </label>
+          <select
+            id="school"
+            value={school}
+            onChange={(e) => { setSchool(e.target.value); setSchoolError(null) }}
+            className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition"
+          >
+            <option value="">Sélectionner votre école</option>
+            {SCHOOLS.map((s) => (
+              <option key={s} value={s}>{s}</option>
+            ))}
+          </select>
+          {schoolError && (
+            <p className="text-xs text-red-600">{schoolError}</p>
+          )}
+        </div>
+
         {/* Nom */}
         <div className="space-y-1">
           <label htmlFor="name" className="block text-sm font-medium text-gray-700">
@@ -127,6 +163,7 @@ export default function RegisterForm() {
           {errors.password && (
             <p className="text-xs text-red-600">{errors.password.message}</p>
           )}
+          <p className="text-xs text-gray-400 mt-1">Minimum 8 caractères</p>
         </div>
 
         {/* Confirmer mot de passe */}
@@ -168,7 +205,7 @@ export default function RegisterForm() {
       <p className="text-center text-sm text-gray-500 mt-6">
         Déjà un compte ?{" "}
         <Link href="/login" className="font-semibold text-gray-900 hover:underline">
-          Se connecter
+          Se connecter →
         </Link>
       </p>
     </div>

@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { signIn } from "next-auth/react"
+import { signIn, getSession } from "next-auth/react"
 import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { Eye, EyeOff, Loader2 } from "lucide-react"
@@ -37,12 +37,22 @@ export default function LoginForm() {
       })
 
       if (result?.error) {
-        toast.error("Email ou mot de passe incorrect")
+        toast.error("Email ou mot de passe incorrect. Veuillez réessayer.")
         return
       }
 
       toast.success("Connexion réussie !")
-      window.location.href = callbackUrl
+
+      // If the user had a specific callbackUrl, honour it; otherwise redirect by role
+      if (callbackUrl !== "/") {
+        window.location.href = callbackUrl
+        return
+      }
+
+      // Fetch the fresh session to determine role
+      const session = await getSession()
+      const role = (session?.user as { role?: string } | null)?.role
+      window.location.href = role === "ADMIN" ? "/dashboard" : "/jobboard"
     } catch {
       toast.error("Une erreur est survenue")
     } finally {

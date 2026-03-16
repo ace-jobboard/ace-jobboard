@@ -77,6 +77,9 @@ export default function OffersPage() {
   const [lastSync,     setLastSync]     = useState<string | null>(null)
   // Optimistic approval: track per-id overrides
   const [approvalOverrides, setApprovalOverrides] = useState<Record<string, boolean>>({})
+  // Bulk selection
+  const [selectedIds,  setSelectedIds]  = useState<Set<string>>(new Set())
+  const [bulkLoading,  setBulkLoading]  = useState(false)
 
   // Debounce search
   const searchDebounce = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -134,8 +137,9 @@ export default function OffersPage() {
       }
       setJobs(fetchedJobs)
       setTotal(data.total ?? 0)
-      // Reset approval overrides when we reload
+      // Reset approval overrides and bulk selection when we reload
       setApprovalOverrides({})
+      setSelectedIds(new Set())
     } finally {
       setLoading(false)
     }
@@ -233,6 +237,31 @@ export default function OffersPage() {
       // Revert
       setApprovalOverrides((prev) => ({ ...prev, [job.id]: currentApproved }))
       toast.error("Failed to update approval status")
+    }
+  }
+
+  async function handleBulkAction(action: 'approve' | 'disapprove' | 'delete') {
+    if (action === 'delete' && !confirm(`Supprimer ${selectedIds.size} offre(s) ?`)) return
+    setBulkLoading(true)
+    const ids = Array.from(selectedIds)
+    try {
+      await Promise.all(ids.map((id) =>
+        action === 'delete'
+          ? fetch(`/api/admin/jobs/${id}`, { method: 'DELETE' })
+          : fetch(`/api/admin/jobs/${id}`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ isApproved: action === 'approve' }),
+            })
+      ))
+      const label = action === 'delete' ? 'supprimées' : action === 'approve' ? 'approuvées' : 'désapprouvées'
+      toast.success(`${ids.length} offre(s) ${label}`)
+      setSelectedIds(new Set())
+      void fetchJobs()
+    } catch {
+      toast.error('Une erreur est survenue')
+    } finally {
+      setBulkLoading(false)
     }
   }
 
@@ -432,12 +461,35 @@ export default function OffersPage() {
         ))}
       </div>
 
+      {/* Bulk action bar */}
+      {selectedIds.size > 0 && (
+        <div className="flex items-center gap-3 px-4 py-2.5 bg-navy/5 border border-navy/10 rounded-xl mb-3">
+          <span className="text-sm font-medium text-navy">{selectedIds.size} offre{selectedIds.size > 1 ? 's' : ''} sélectionnée{selectedIds.size > 1 ? 's' : ''}</span>
+          <div className="flex gap-2 ml-auto">
+            <button onClick={() => handleBulkAction('approve')} disabled={bulkLoading} className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-green-100 text-green-700 hover:bg-green-200 disabled:opacity-50">✓ Approuver</button>
+            <button onClick={() => handleBulkAction('disapprove')} disabled={bulkLoading} className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-amber-100 text-amber-700 hover:bg-amber-200 disabled:opacity-50">✗ Désapprouver</button>
+            <button onClick={() => handleBulkAction('delete')} disabled={bulkLoading} className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-red-100 text-red-700 hover:bg-red-200 disabled:opacity-50">🗑 Supprimer</button>
+          </div>
+        </div>
+      )}
+
       {/* Table */}
       <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="text-xs uppercase tracking-wide text-gray-400 bg-gray-50 border-b border-gray-100">
+                <th className="px-4 py-3 text-left">
+                  <input
+                    type="checkbox"
+                    checked={jobs.length > 0 && jobs.every((j) => selectedIds.has(j.id))}
+                    onChange={(e) => {
+                      if (e.target.checked) setSelectedIds(new Set(jobs.map((j) => j.id)))
+                      else setSelectedIds(new Set())
+                    }}
+                    className="w-4 h-4 rounded border-gray-300 accent-teal cursor-pointer"
+                  />
+                </th>
                 {columns.map(([k, label]) => (
                   <th
                     key={k}
@@ -456,7 +508,7 @@ export default function OffersPage() {
               {loading ? (
                 Array.from({ length: 8 }).map((_, i) => (
                   <tr key={i}>
-                    {Array.from({ length: 9 }).map((__, j) => (
+                    {Array.from({ length: 10 }).map((__, j) => (
                       <td key={j} className="px-4 py-3">
                         <div className="h-4 bg-gray-100 rounded animate-pulse" />
                       </td>
@@ -465,13 +517,26 @@ export default function OffersPage() {
                 ))
               ) : jobs.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="py-4">
+                  <td colSpan={10} className="py-4">
                     <EmptyState message="No offers found for these criteria" />
                   </td>
                 </tr>
               ) : (
                 jobs.map((job) => (
                   <tr key={job.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-4 py-3">
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.has(job.id)}
+                        onChange={(e) => {
+                          const next = new Set(selectedIds)
+                          if (e.target.checked) next.add(job.id)
+                          else next.delete(job.id)
+                          setSelectedIds(next)
+                        }}
+                        className="w-4 h-4 rounded border-gray-300 text-teal accent-teal cursor-pointer"
+                      />
+                    </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         <AvatarCircle name={job.company} size="sm" />

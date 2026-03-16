@@ -8,6 +8,7 @@ interface JobCardProps {
   job: Job
   savedJobIds?: string[]
   isAuthenticated?: boolean
+  publicMode?: boolean
 }
 
 const filiereBadgeColors: Record<string, string> = {
@@ -43,6 +44,7 @@ export default function JobCard({
   job,
   savedJobIds = [],
   isAuthenticated = false,
+  publicMode = false,
 }: JobCardProps) {
   const badgeColors = filiereBadgeColors[job.filiere] || "bg-gray-50 text-gray-700 ring-gray-100"
   const contractColors = contractBadgeColors[job.contractType] || "bg-gray-50 text-gray-700 ring-gray-100"
@@ -117,7 +119,7 @@ export default function JobCard({
           {relativeTime(job.createdAt)}
         </span>
         <Link
-          href={`/offers/${job.id}`}
+          href={publicMode ? `/jobboard/${job.id}` : `/offers/${job.id}`}
           className="text-xs font-semibold px-4 py-2 rounded-lg bg-teal hover:bg-teal-hover text-white transition-colors duration-150"
         >
           Voir l&apos;offre →

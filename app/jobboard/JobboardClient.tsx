@@ -32,6 +32,7 @@ interface Props {
   userSchool: string | null
   initialJobs: SerializedJob[]
   initialTotal: number
+  defaultSchool?: string
 }
 
 const FILIERES = ["AMOS", "CMH", "EIDM", "ESDAC", "ENAAI"]
@@ -76,6 +77,7 @@ export default function JobboardClient({
   userSchool,
   initialJobs,
   initialTotal,
+  defaultSchool,
 }: Props) {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -85,6 +87,7 @@ export default function JobboardClient({
   const [school, setSchool] = useState(() => {
     const paramSchool = searchParams.get("school")
     if (paramSchool) return paramSchool
+    if (defaultSchool) return defaultSchool
     return userSchool ?? ""
   })
   const [page, setPage] = useState(parseInt(searchParams.get("page") ?? "1", 10))
@@ -306,6 +309,7 @@ export default function JobboardClient({
                 job={job}
                 savedJobIds={[]}
                 isAuthenticated={isLoggedIn}
+                publicMode={true}
               />
             ))}
           </div>
