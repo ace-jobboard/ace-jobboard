@@ -1,111 +1,138 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import Image from "next/image"
-import AvatarCircle from "@/components/ui/avatar-circle"
-import StatusBadge from "@/components/ui/status-badge"
+import JobCard from "@/components/JobCard"
 import EmptyState from "@/components/ui/empty-state"
-import { MapPin, Search } from "lucide-react"
+import { Search } from "lucide-react"
+import { Job } from "@/types/job"
 
-interface Job {
+interface ApiJob {
   id: string
   title: string
   company: string
-  contractType: string
-  filiere: string
-  source: string
+  description: string
   location: string
+  filiere: string
+  niveau: string
   region: string
-  createdAt: string
+  contractType: string
   url: string
+  source: string
+  isApproved: boolean
+  isActive: boolean
+  createdAt: string
+  updatedAt: string
 }
 
-const FILIERES = ["AMOS", "CMH", "EIDM", "ESDAC", "ENAAI"]
-const FILIERE_MAP: Record<string, string> = {
-  AMOS: "Sport Management",
-  CMH: "Hôtellerie & Luxe",
-  EIDM: "Mode & Luxe",
-  ESDAC: "Design",
-  ENAAI: "Illustration & Animation",
-}
+const FILIERES   = ["AMOS", "CMH", "EIDM", "ESDAC", "ENAAI"]
+const CONTRACTS  = ["Alternance", "Stage"]
 
-function daysAgo(d: string): string {
-  const diff = Math.floor((Date.now() - new Date(d).getTime()) / 86_400_000)
-  if (diff === 0) return "Today"
-  if (diff === 1) return "Yesterday"
-  return `${diff} days ago`
+function toJob(raw: ApiJob): Job {
+  return {
+    ...raw,
+    createdAt: new Date(raw.createdAt),
+    updatedAt: new Date(raw.updatedAt),
+  }
 }
 
 export default function JobBoardPage() {
-  const [jobs, setJobs]           = useState<Job[]>([])
-  const [total, setTotal]         = useState(0)
-  const [loading, setLoading]     = useState(true)
-  const [search, setSearch]       = useState("")
-  const [contract, setContract]   = useState("")
-  const [school, setSchool]       = useState("")
-  const [source, setSource]       = useState("")
-  const [page, setPage]           = useState(1)
+  const router       = useRouter()
+  const searchParams = useSearchParams()
+
+  const [search,   setSearch]   = useState(searchParams.get("q") ?? "")
+  const [contract, setContract] = useState(searchParams.get("contract") ?? "")
+  const [school,   setSchool]   = useState(searchParams.get("school") ?? "")
+  const [page,     setPage]     = useState(parseInt(searchParams.get("page") ?? "1", 10))
+
+  const [jobs,    setJobs]    = useState<Job[]>([])
+  const [total,   setTotal]   = useState(0)
+  const [loading, setLoading] = useState(true)
+
+  // Debounce search
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [debouncedSearch, setDebouncedSearch] = useState(search)
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    debounceRef.current = setTimeout(() => setDebouncedSearch(search), 400)
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current) }
+  }, [search])
+
+  // Sync URL
+  useEffect(() => {
+    const params = new URLSearchParams()
+    if (debouncedSearch) params.set("q", debouncedSearch)
+    if (contract) params.set("contract", contract)
+    if (school)   params.set("school", school)
+    if (page > 1) params.set("page", String(page))
+    router.replace(`/jobboard?${params.toString()}`, { scroll: false })
+  }, [debouncedSearch, contract, school, page, router])
 
   const fetchJobs = useCallback(async () => {
     setLoading(true)
     try {
-      const params = new URLSearchParams({
-        page: String(page),
-        limit: "20",
-        ...(search   && { search }),
-        ...(contract && { contractType: contract }),
-        ...(school   && { school }),
-        ...(source   && { source }),
-      })
-      const res = await fetch(`/api/jobs?${params}`)
-      const data = await res.json()
-      setJobs(data.jobs ?? [])
+      const params = new URLSearchParams({ page: String(page), limit: "20" })
+      if (debouncedSearch) params.set("q", debouncedSearch)
+      if (contract)        params.set("contract", contract)
+      if (school)          params.set("school", school)
+
+      const res  = await fetch(`/api/jobs?${params}`)
+      const data = await res.json() as { jobs?: ApiJob[]; total?: number }
+      setJobs((data.jobs ?? []).map(toJob))
       setTotal(data.total ?? 0)
     } finally {
       setLoading(false)
     }
-  }, [page, search, contract, school, source])
+  }, [page, debouncedSearch, contract, school])
 
-  useEffect(() => { fetchJobs() }, [fetchJobs])
+  useEffect(() => { void fetchJobs() }, [fetchJobs])
 
-  const pills = (options: string[], value: string, set: (v: string) => void) =>
-    options.map((opt) => (
+  function pill(options: string[], value: string, set: (v: string) => void) {
+    return options.map((opt) => (
       <button
         key={opt}
         onClick={() => { set(value === opt ? "" : opt); setPage(1) }}
         className={`px-3 py-1 rounded-full text-xs font-medium transition-colors border ${
           value === opt
-            ? "bg-teal text-white border-teal"
-            : "bg-white text-gray-600 border-gray-200 hover:border-teal hover:text-teal"
+            ? "bg-navy text-white border-navy"
+            : "bg-white text-gray-600 border-gray-200 hover:border-navy hover:text-navy"
         }`}
       >
         {opt}
       </button>
     ))
+  }
 
-  // Suppress unused variable warning
-  void FILIERE_MAP
+  const isLoggedIn = false // Public page — no session available client-side
 
   return (
     <div className="min-h-screen bg-light">
-      {/* Header */}
+      {/* Navbar */}
       <header className="bg-navy text-white py-3 px-6 flex items-center justify-between">
         <Link href="/">
           <Image src="/ace-logo.png" alt="ACE" width={120} height={40} className="h-9 w-auto" priority />
         </Link>
-        <Link href="/login" className="text-sm text-gray-300 hover:text-white transition-colors">Login →</Link>
+        <Link href="/login" className="text-sm text-gray-300 hover:text-white transition-colors">
+          Se connecter →
+        </Link>
       </header>
 
-      {/* Hero search */}
-      <div className="bg-navy pb-10 pt-8 px-6">
-        <h1 className="text-center text-2xl font-bold text-white mb-6">Find your next alternance or internship</h1>
+      {/* Hero */}
+      <div className="bg-navy py-16 px-6">
+        <h1 className="text-center text-3xl font-bold text-white mb-3">
+          Trouvez votre alternance ou stage
+        </h1>
+        <p className="text-center text-white/70 text-base mb-8">
+          Des offres sélectionnées pour les étudiants ACE Education
+        </p>
         <div className="max-w-3xl mx-auto bg-white rounded-xl p-2 flex gap-2 shadow-xl">
           <div className="relative flex-1">
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <input
               className="w-full pl-9 pr-3 py-2.5 text-sm rounded-lg focus:outline-none"
-              placeholder="Search for an internship, apprenticeship…"
+              placeholder="Rechercher une offre, une entreprise…"
               value={search}
               onChange={(e) => { setSearch(e.target.value); setPage(1) }}
             />
@@ -115,87 +142,75 @@ export default function JobBoardPage() {
             value={contract}
             onChange={(e) => { setContract(e.target.value); setPage(1) }}
           >
-            <option value="">All contracts</option>
-            <option value="Alternance">Apprenticeship</option>
-            <option value="Stage">Internship</option>
+            <option value="">Tous les contrats</option>
+            <option value="Alternance">Alternance</option>
+            <option value="Stage">Stage</option>
           </select>
-          <button className="px-5 py-2.5 bg-teal text-white rounded-lg text-sm font-medium hover:bg-teal/90 transition-colors flex-shrink-0">
-            Search
+          <button
+            onClick={() => void fetchJobs()}
+            className="px-5 py-2.5 bg-teal text-white rounded-lg text-sm font-medium hover:bg-teal/90 transition-colors flex-shrink-0"
+          >
+            Rechercher
           </button>
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-4 py-8">
+      <div className="max-w-5xl mx-auto px-4 py-8">
+        {/* Login banner */}
+        {!isLoggedIn && (
+          <div className="mb-6 flex items-center gap-3 px-4 py-3 bg-teal/10 border border-teal/20 rounded-lg text-sm text-teal">
+            <span>💡</span>
+            <span>
+              <Link href="/login" className="font-semibold hover:underline">Connectez-vous</Link>
+              {" "}pour voir les offres adaptées à votre formation
+            </span>
+          </div>
+        )}
+
         {/* Filter pills */}
-        <div className="flex flex-wrap gap-2 mb-6">
-          <span className="text-xs text-gray-400 self-center mr-1">School:</span>
-          {pills(FILIERES, school, setSchool)}
-          <span className="text-xs text-gray-400 self-center ml-2 mr-1">Source:</span>
-          {pills(["wttj", "linkedin"], source, setSource)}
+        <div className="bg-white border-b py-3 px-0 mb-6 flex flex-wrap gap-2 items-center">
+          <span className="text-xs text-gray-400 self-center mr-1">École :</span>
+          {pill(FILIERES, school, setSchool)}
+          <span className="text-xs text-gray-400 self-center ml-3 mr-1">Contrat :</span>
+          {pill(CONTRACTS, contract, setContract)}
         </div>
 
-        <p className="text-xs text-gray-400 mb-4">{total} offers found</p>
+        {/* Results count */}
+        <p className="text-xs text-gray-400 mb-4">{total} offres trouvées</p>
 
         {/* Job cards */}
         {loading ? (
-          <div className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="bg-white rounded-lg border border-gray-100 p-5 animate-pulse">
+              <div key={i} className="bg-white rounded-2xl border border-gray-100 p-5 animate-pulse">
                 <div className="h-4 bg-gray-100 rounded w-2/3 mb-3" />
                 <div className="h-3 bg-gray-100 rounded w-1/3" />
               </div>
             ))}
           </div>
         ) : jobs.length === 0 ? (
-          <EmptyState message="No offers found for these criteria" />
+          <EmptyState message="Aucune offre trouvée pour ces critères" />
         ) : (
-          <div className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {jobs.map((job) => (
-              <div key={job.id} className="bg-white rounded-lg border border-gray-100 p-5 hover:shadow-md transition-shadow">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex items-start gap-3 flex-1 min-w-0">
-                    <AvatarCircle name={job.company} size="md" />
-                    <div className="min-w-0">
-                      <h3 className="font-semibold text-navy text-base leading-snug">{job.title}</h3>
-                      <p className="text-sm text-gray-500 mt-0.5">{job.company}</p>
-                      <div className="flex flex-wrap items-center gap-3 mt-2 text-xs text-gray-400">
-                        <span className="flex items-center gap-1"><MapPin size={11} />{job.location || job.region}</span>
-                        <span>🏫 {job.filiere}</span>
-                        <span>🔗 {job.source.toUpperCase()}</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex flex-col items-end gap-2 flex-shrink-0">
-                    <StatusBadge
-                      label={job.contractType === "Alternance" ? "Apprenticeship" : job.contractType === "Stage" ? "Internship" : job.contractType}
-                      variant={job.contractType === "Alternance" ? "teal" : "grey"}
-                    />
-                    <span className="text-xs text-gray-400">{daysAgo(job.createdAt)}</span>
-                  </div>
-                </div>
-                <div className="mt-3 pt-3 border-t border-gray-50">
-                  <a
-                    href={job.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm text-teal font-medium hover:underline"
-                  >
-                    View offer →
-                  </a>
-                </div>
-              </div>
+              <JobCard
+                key={job.id}
+                job={job}
+                savedJobIds={[]}
+                isAuthenticated={false}
+              />
             ))}
           </div>
         )}
 
-        {/* Load more */}
+        {/* Pagination */}
         {jobs.length < total && (
           <div className="text-center mt-8">
             <button
               onClick={() => setPage((p) => p + 1)}
               className="px-6 py-2.5 border border-teal text-teal rounded-lg text-sm font-medium hover:bg-teal hover:text-white transition-colors"
             >
-              Load more
+              Charger plus
             </button>
           </div>
         )}

@@ -32,6 +32,13 @@ model Job {
 
   // Extra enrichment
   salary       String?
+  memo         String?
+  tags         String[]
+  companyLogo  String?
+  applyUrl     String?
+  postedAt     DateTime?
+  expiresAt    DateTime?
+  taskId       String?
 
   // Apify metadata
   apifyActorId String?

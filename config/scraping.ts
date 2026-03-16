@@ -32,6 +32,26 @@ export const COMPETITOR_DESCRIPTION_PHRASES = [
   "coût de formation",
 ]
 
+// Merged, deduplicated competitor lists (used by fetch-tasks.ts)
+export const COMPETITOR_COMPANIES: string[] = [
+  'ifae', 'iscod', 'galileo', 'esg sport', 'win sport school',
+  'nuevo cfa', 'pigier', 'alticome', 'prisma formations',
+  'stand up formation', 'efrei', 'epitech', 'supinfo',
+  'ecole de', 'école de', 'cfa ', 'institut de formation',
+  'centre de formation',
+]
+
+export const COMPETITOR_PHRASES: string[] = [
+  'notre partenaire école', 'notre école partenaire',
+  'formation diplômante', 'école de commerce',
+  'centre de formation', 'frais de scolarité',
+  "frais d'inscription", 'rejoignez notre école',
+  'intégrez notre formation', 'devenez étudiant',
+  'recrutement étudiant', 'bachelor en alternance chez nous',
+  'en partenariat avec', 'notre partenaire académique',
+  'coût de formation',
+]
+
 export type SchoolKey = "AMOS" | "CMH" | "EIDM" | "ESDAC" | "ENAAI"
 export type SourceKey = "linkedin" | "indeed" | "wttj"
 

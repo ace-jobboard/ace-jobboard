@@ -5,6 +5,7 @@ import Credentials from "next-auth/providers/credentials"
 import bcrypt from "bcryptjs"
 import { prisma } from "@/lib/db"
 import { authConfig } from "./auth.config"
+import { lookupStudentByEmail, isAdminEmail } from "@/lib/hubspot/client"
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   trustHost: true,
@@ -54,6 +55,80 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }),
   ],
   callbacks: {
+    async signIn({ user }) {
+      const email = user.email
+      if (!email) return true
+
+      // Admin emails skip HubSpot check
+      if (isAdminEmail(email)) return true
+
+      try {
+        const whitelist = await prisma.studentWhitelist.findUnique({ where: { email } })
+
+        if (whitelist) {
+          const lastChecked = whitelist.verifiedAt
+          const hoursSince = (Date.now() - lastChecked.getTime()) / 3_600_000
+
+          // Still fresh (< 24h) — allow
+          if (hoursSince < 24) return true
+
+          // Stale — re-check HubSpot
+          try {
+            const hsData = await lookupStudentByEmail(email)
+            if (hsData) {
+              await prisma.studentWhitelist.update({
+                where: { email },
+                data: {
+                  verifiedAt: new Date(),
+                  expiresAt:  new Date(Date.now() + 86_400_000),
+                  school:     hsData.school ?? undefined,
+                },
+              })
+              return true
+            }
+            // Not found in HubSpot anymore — still allow (graceful)
+            console.warn(`[signIn] ${email} no longer found in HubSpot, allowing with stale whitelist`)
+            return true
+          } catch (hubspotErr) {
+            // HubSpot error — log and allow (graceful degradation)
+            console.warn(`[signIn] HubSpot re-check failed for ${email}:`, hubspotErr)
+            return true
+          }
+        }
+
+        // Not in whitelist — check HubSpot
+        try {
+          const hsData = await lookupStudentByEmail(email)
+          if (hsData) {
+            await prisma.studentWhitelist.upsert({
+              where: { email },
+              create: {
+                email,
+                school:           hsData.school ?? undefined,
+                hubspotContactId: hsData.contactId,
+                expiresAt:        new Date(Date.now() + 86_400_000),
+              },
+              update: {
+                school:     hsData.school ?? undefined,
+                verifiedAt: new Date(),
+                expiresAt:  new Date(Date.now() + 86_400_000),
+              },
+            })
+            return true
+          }
+          // Not found in HubSpot and not in whitelist
+          console.warn(`[signIn] ${email} not found in HubSpot whitelist`)
+          return false
+        } catch (hubspotErr) {
+          // HubSpot error — log and allow (graceful degradation)
+          console.warn(`[signIn] HubSpot lookup failed for ${email}:`, hubspotErr)
+          return true
+        }
+      } catch (dbErr) {
+        console.error(`[signIn] DB error for ${email}:`, dbErr)
+        return true
+      }
+    },
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id

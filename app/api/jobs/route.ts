@@ -1,50 +1,66 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
 import { SCHOOL_FILIERE, SchoolKey } from "@/config/scraping"
+import { Prisma } from "@prisma/client"
 
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url)
 
     const filiere      = searchParams.get("filiere")
-    const school       = searchParams.get("school")   // alternative: AMOS, CMH, etc.
+    const school       = searchParams.get("school")   // AMOS, CMH, etc. OR filiere string
     const niveau       = searchParams.get("niveau")
     const region       = searchParams.get("region")
-    const contractType = searchParams.get("contractType")
-    const search       = searchParams.get("search")
+    const contractType = searchParams.get("contract") ?? searchParams.get("contractType")
+    const source       = searchParams.get("source")
+    const search       = searchParams.get("q") ?? searchParams.get("search")
+    const approvedStr  = searchParams.get("approved")
+    const publishedSince = searchParams.get("publishedSince")
+    const sortField    = searchParams.get("sort") ?? "createdAt"
+    const sortDir      = (searchParams.get("dir") ?? "desc") === "asc" ? "asc" : "desc"
     const page         = Math.max(1, parseInt(searchParams.get("page") ?? "1", 10))
-    const limit        = Math.max(1, parseInt(searchParams.get("limit") ?? "20", 10))
+    const limit        = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") ?? "25", 10)))
     const skip         = (page - 1) * limit
 
-    // school param → filiere string
-    const filiereFilter =
+    // school param → filiere string (try key lookup first, then use as filiere directly)
+    const filiereFromSchool =
       school && SCHOOL_FILIERE[school as SchoolKey]
         ? SCHOOL_FILIERE[school as SchoolKey]
-        : filiere
+        : school ?? filiere
 
-    const where = {
+    const where: Prisma.JobWhereInput = {
       isActive:   true,
-      isApproved: true,
       NOT: [{ source: 'adzuna' }, { filiere: '_dump' }],
-      ...(filiereFilter && { filiere: filiereFilter }),
+      ...(filiereFromSchool && { filiere: filiereFromSchool }),
       ...(niveau       && { niveau }),
-      ...(region       && { region: { contains: region, mode: 'insensitive' as const } }),
+      ...(region       && { region: { contains: region, mode: 'insensitive' } }),
       ...(contractType && { contractType }),
+      ...(source       && { source }),
+      ...(approvedStr !== null && approvedStr !== "" && {
+        isApproved: approvedStr === "true",
+      }),
+      ...(publishedSince && {
+        createdAt: { gte: new Date(publishedSince) },
+      }),
       ...(search && {
         OR: [
-          { title:   { contains: search, mode: "insensitive" as const } },
-          { company: { contains: search, mode: "insensitive" as const } },
+          { title:       { contains: search, mode: "insensitive" } },
+          { company:     { contains: search, mode: "insensitive" } },
+          { description: { contains: search, mode: "insensitive" } },
         ],
       }),
     }
 
+    // Build orderBy — allow common fields
+    const allowedSortFields = [
+      "title", "company", "contractType", "filiere", "source",
+      "location", "createdAt", "isApproved", "isActive",
+    ]
+    const orderByField = allowedSortFields.includes(sortField) ? sortField : "createdAt"
+    const orderBy = { [orderByField]: sortDir } as Prisma.JobOrderByWithRelationInput
+
     const [rawJobs, total] = await Promise.all([
-      prisma.job.findMany({
-        where,
-        orderBy: { createdAt: "desc" },
-        skip,
-        take: limit,
-      }),
+      prisma.job.findMany({ where, orderBy, skip, take: limit }),
       prisma.job.count({ where }),
     ])
 

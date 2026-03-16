@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/db'
 import { APIFY_TASKS } from '@/config/tasks'
 import { classifyFiliere } from '@/lib/apify/classify'
+import { COMPETITOR_COMPANIES, COMPETITOR_PHRASES } from '@/config/scraping'
 
 // ---------------------------------------------------------------------------
 // Source field mapping
@@ -129,22 +130,6 @@ function normalizeItem(item: RawItem, source: string): NormalizedFields {
 // Filtering
 // ---------------------------------------------------------------------------
 
-const COMPETITOR_COMPANIES = [
-  'ifae', 'iscod', 'galileo', 'esg sport', 'win sport school',
-  'nuevo cfa', 'pigier', 'alticome', 'prisma formations',
-  'stand up formation', 'efrei', 'epitech', 'supinfo',
-  'ecole de', 'école de', 'cfa ', 'institut de formation',
-  'centre de formation',
-]
-
-const COMPETITOR_PHRASES = [
-  'notre partenaire école', 'notre école partenaire',
-  'formation diplômante', 'école de commerce',
-  'centre de formation', 'frais de scolarité',
-  "frais d'inscription", 'rejoignez notre école',
-  'intégrez notre formation', 'devenez étudiant',
-  'recrutement étudiant', 'bachelor en alternance chez nous',
-]
 
 function isCompetitor(company: string, description: string): boolean {
   const companyLower = (company || '').toLowerCase()

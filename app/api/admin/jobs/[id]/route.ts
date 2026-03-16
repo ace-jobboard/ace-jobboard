@@ -12,16 +12,39 @@ export async function PATCH(
   }
 
   const { id } = await params
-  const body = await req.json() as { isActive?: boolean }
+  const body = await req.json() as { isActive?: boolean; isApproved?: boolean; memo?: string }
 
-  if (typeof body.isActive !== "boolean") {
-    return NextResponse.json({ error: "isActive must be boolean" }, { status: 400 })
+  // At least one field must be provided
+  if (
+    typeof body.isActive !== "boolean" &&
+    typeof body.isApproved !== "boolean" &&
+    typeof body.memo !== "string"
+  ) {
+    return NextResponse.json({ error: "No valid field to update" }, { status: 400 })
   }
 
-  await prisma.job.update({
-    where: { id },
-    data: { isActive: body.isActive },
-  })
+  const data: { isActive?: boolean; isApproved?: boolean; memo?: string } = {}
+  if (typeof body.isActive === "boolean")   data.isActive   = body.isActive
+  if (typeof body.isApproved === "boolean") data.isApproved = body.isApproved
+  if (typeof body.memo === "string")        data.memo       = body.memo
+
+  await prisma.job.update({ where: { id }, data })
 
   return NextResponse.json({ ok: true })
+}
+
+export async function DELETE(
+  _req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const session = await auth()
+  if (!session?.user || session.user.role !== "ADMIN") {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
+
+  const { id } = await params
+
+  await prisma.job.delete({ where: { id } })
+
+  return NextResponse.json({ success: true })
 }
