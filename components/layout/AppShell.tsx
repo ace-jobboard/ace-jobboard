@@ -3,7 +3,7 @@ import Topbar from "@/components/layout/Topbar"
 
 interface Props {
   children: React.ReactNode
-  title: string
+  title?: string
   userName?: string
 }
 

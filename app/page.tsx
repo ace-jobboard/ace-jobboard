@@ -1,323 +1,200 @@
-"use client"
+import Image from 'next/image'
+import Link from 'next/link'
+import { prisma } from '@/lib/db'
+import { auth } from '@/auth'
+import JobCard from '@/components/JobCard'
+import HomeSearchBar from '@/components/HomeSearchBar'
+import UserNav from '@/components/auth/UserNav'
+import { Button } from '@/components/ui/button'
+import { Job } from '@/types/job'
 
-import { useState, useEffect, useCallback } from "react"
-import { useSession } from "next-auth/react"
-import Image from "next/image"
-import Link from "next/link"
-import Filters from "@/components/Filters"
-import JobCard from "@/components/JobCard"
-import JobCardSkeleton from "@/components/JobCardSkeleton"
-import UserNav from "@/components/auth/UserNav"
-import { Button } from "@/components/ui/button"
-import { Job, JobFilters } from "@/types/job"
-import { ChevronLeft, ChevronRight } from "lucide-react"
-
-const PAGE_SIZE = 25
-
-const FILIERE_LABELS = [
-  "Sport Management",
-  "Hôtellerie & Luxe",
-  "Mode & Luxe",
-  "Design",
-  "Illustration & Animation",
+const SCHOOLS = [
+  { key: 'AMOS',  label: 'AMOS',  filiere: 'Sport Management' },
+  { key: 'CMH',   label: 'CMH',   filiere: 'Hôtellerie & Luxe' },
+  { key: 'EIDM',  label: 'EIDM',  filiere: 'Mode & Luxe' },
+  { key: 'ESDAC', label: 'ESDAC', filiere: 'Design' },
+  { key: 'ENAAI', label: 'ENAAI', filiere: 'Illustration & Animation' },
 ]
 
-const filiereColors: Record<string, string> = {
-  "Sport Management":         "text-green-600",
-  "Hôtellerie & Luxe":        "text-blue-900",
-  "Mode & Luxe":              "text-purple-600",
-  "Design":                   "text-orange-500",
-  "Illustration & Animation": "text-red-600",
-}
+const JOB_SELECT = {
+  id: true, title: true, company: true, location: true, region: true,
+  filiere: true, niveau: true, contractType: true, salary: true,
+  url: true, source: true, isApproved: true, isActive: true,
+  createdAt: true, tags: true, apifyActorId: true,
+  description: true, updatedAt: true,
+} as const
 
-export default function Home() {
-  const { data: session, status } = useSession()
-  const [jobs, setJobs] = useState<Job[]>([])
-  const [totalJobs, setTotalJobs] = useState(0)
-  const [totalPages, setTotalPages] = useState(1)
-  const [page, setPage] = useState(1)
-  const [filters, setFilters] = useState<JobFilters>({})
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [savedJobIds, setSavedJobIds] = useState<string[]>([])
+export default async function HomePage() {
+  const session = await auth()
 
-  // Filiere breakdown counts — fetched once from DB groupBy (not computed from page slice)
-  const [breakdown, setBreakdown] = useState<Record<string, number>>({})
-  const [breakdownTotal, setBreakdownTotal] = useState(0)
+  // Fetch data in parallel
+  const [breakdown, recentJobs, ...schoolCounts] = await Promise.all([
+    prisma.job.groupBy({
+      by: ['filiere'],
+      _count: { id: true },
+      where: { isActive: true, NOT: [{ source: 'adzuna' }, { filiere: '_dump' }] },
+    }),
+    prisma.job.findMany({
+      where: { isActive: true, isApproved: true, NOT: [{ source: 'adzuna' }, { filiere: '_dump' }] },
+      orderBy: { createdAt: 'desc' },
+      take: 6,
+      select: JOB_SELECT,
+    }),
+    ...SCHOOLS.map(s => prisma.job.count({
+      where: { isActive: true, filiere: s.filiere, NOT: [{ source: 'adzuna' }] },
+    })),
+  ])
 
-  // Fetch filiere breakdown once (no filters applied — shows global totals)
-  useEffect(() => {
-    fetch("/api/jobs?format=breakdown")
-      .then((r) => r.json())
-      .then((data: { breakdown: { filiere: string; count: number }[]; total: number }) => {
-        const map: Record<string, number> = {}
-        for (const row of data.breakdown ?? []) map[row.filiere] = row.count
-        setBreakdown(map)
-        setBreakdownTotal(data.total ?? 0)
-      })
-      .catch(() => {})
-  }, [])
+  const breakdownMap: Record<string, number> = {}
+  for (const row of breakdown) breakdownMap[row.filiere] = row._count.id
+  const totalJobs = Object.values(breakdownMap).reduce((a, b) => a + b, 0)
 
-  const fetchJobs = useCallback(async () => {
-    try {
-      setLoading(true)
-      setError(null)
+  // School-specific recent jobs (3 per school)
+  const schoolJobs = await Promise.all(
+    SCHOOLS.map(s => prisma.job.findMany({
+      where: { isActive: true, isApproved: true, filiere: s.filiere, NOT: [{ source: 'adzuna' }] },
+      orderBy: { createdAt: 'desc' },
+      take: 3,
+      select: JOB_SELECT,
+    }))
+  )
 
-      const params = new URLSearchParams()
-      if (filters.filiere) params.append("filiere", filters.filiere)
-      if (filters.niveau) params.append("niveau", filters.niveau)
-      if (filters.region) params.append("region", filters.region)
-      if (filters.contractType) params.append("contractType", filters.contractType)
-      if (filters.search) params.append("search", filters.search)
-      params.append("limit", String(PAGE_SIZE))
-      params.append("page", String(page))
+  // Serialize dates for client consumption
+  type SerializedJob = Omit<typeof recentJobs[0], 'createdAt' | 'updatedAt'> & { createdAt: string; updatedAt: string }
+  const serializeJob = (j: typeof recentJobs[0]): SerializedJob => ({
+    ...j,
+    createdAt: j.createdAt.toISOString(),
+    updatedAt: j.updatedAt.toISOString(),
+  })
 
-      const response = await fetch(`/api/jobs?${params.toString()}`)
-      if (!response.ok) throw new Error("Erreur lors du chargement des offres")
-
-      const data = await response.json()
-      setJobs(Array.isArray(data) ? data : (data.jobs ?? []))
-      setTotalJobs(data.total ?? 0)
-      setTotalPages(data.pages ?? 1)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Une erreur est survenue")
-    } finally {
-      setLoading(false)
-    }
-  }, [filters, page])
-
-  // Reset to page 1 when filters change
-  useEffect(() => {
-    setPage(1)
-  }, [filters])
-
-  useEffect(() => {
-    fetchJobs()
-  }, [fetchJobs])
-
-  useEffect(() => {
-    if (session?.user) {
-      fetch("/api/user/saved-jobs")
-        .then((r) => r.json())
-        .then((savedJobs: Job[]) => setSavedJobIds(savedJobs.map((j) => j.id)))
-        .catch(() => {})
-    } else {
-      setSavedJobIds([])
-    }
-  }, [session])
-
-  const handleFilterChange = (newFilters: JobFilters) => {
-    setFilters((prev) => ({ ...prev, ...newFilters }))
-  }
-
-  // When a filiere filter is active, use the filtered total; otherwise use DB breakdown
-  const displayTotal = Object.values(filters).some(Boolean) ? totalJobs : breakdownTotal
+  const recentSerialized = recentJobs.map(serializeJob)
+  const schoolJobsSerialized = schoolJobs.map(arr => arr.map(serializeJob))
 
   return (
-    <main className="min-h-screen bg-light">
-      {/* Sticky header + filters */}
-      <div className="sticky top-0 z-50">
-        <header className="bg-navy text-white shadow-lg">
-          <div className="container mx-auto px-4 py-3">
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-4">
-                <Image
-                  src="/ace-logo.png"
-                  alt="ACE Education"
-                  width={160}
-                  height={52}
-                  className="h-11 w-auto object-contain"
-                  priority
-                />
-                <div className="hidden md:block h-7 border-l border-white/20" />
-                <div className="hidden md:block">
-                  <p className="text-sm font-semibold text-white leading-tight">Job Board</p>
-                  <p className="text-xs text-white/50">Stages · Alternances · Apprentissage</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                {status === "authenticated" && session?.user ? (
-                  <UserNav user={session.user} />
-                ) : (
-                  <>
-                    <Link
-                      href="/login"
-                      className="text-sm text-white/70 hover:text-white transition-colors duration-150"
-                    >
-                      Connexion
-                    </Link>
-                    <Button asChild size="sm" className="bg-teal hover:bg-teal-hover text-white font-semibold transition-colors duration-150 cursor-pointer">
-                      <Link href="/register">Créer un compte</Link>
-                    </Button>
-                  </>
-                )}
-              </div>
-            </div>
+    <div className="min-h-screen bg-light">
+      {/* Navbar */}
+      <header className="bg-navy text-white">
+        <div className="container mx-auto px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Image src="/ace-logo.png" alt="ACE Education" width={140} height={46} className="h-10 w-auto object-contain" priority />
+            <div className="hidden md:block h-6 border-l border-white/20" />
+            <span className="hidden md:block text-sm font-semibold text-white/80">Job Board</span>
           </div>
-        </header>
-
-        {/* Sticky filter bar */}
-        <div className="bg-white border-b border-gray-200 shadow-sm">
-          <div className="container mx-auto px-4 py-3">
-            <Filters onFilterChange={handleFilterChange} />
+          <div className="flex items-center gap-3">
+            {session?.user ? (
+              <UserNav user={session.user} />
+            ) : (
+              <>
+                <Link href="/login" className="text-sm text-white/70 hover:text-white transition-colors">Connexion</Link>
+                <Button asChild size="sm" className="bg-teal hover:bg-teal-hover text-white font-semibold">
+                  <Link href="/register">Créer un compte</Link>
+                </Button>
+              </>
+            )}
           </div>
         </div>
-      </div>
+      </header>
 
-      <div className="container mx-auto px-4 py-8">
-        {/* Stats card — DB-level counts, always accurate */}
-        {breakdownTotal > 0 && (
-          <div className="animate-fade-up bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-8 hover:shadow-md transition-shadow duration-200">
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-4">
-              Aperçu des offres
-            </p>
-            <div className="grid grid-cols-3 md:grid-cols-6 gap-4">
-              <div className="col-span-3 md:col-span-1 text-center md:border-r border-gray-100 md:pr-4">
-                <div className="text-4xl font-extrabold text-gray-900 leading-none">{displayTotal}</div>
-                <div className="text-xs text-gray-500 mt-1.5 font-medium">Offres disponibles</div>
-              </div>
-              {FILIERE_LABELS.map((f) => (
-                <div key={f} className="text-center">
-                  <div className={`text-2xl font-bold leading-none ${filiereColors[f] ?? "text-gray-700"}`}>
-                    {breakdown[f] ?? 0}
-                  </div>
-                  <div className="text-xs text-gray-400 mt-1.5 leading-tight">{f}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+      {/* Hero */}
+      <section className="bg-navy text-white py-20">
+        <div className="container mx-auto px-4 text-center">
+          <h1 className="text-4xl md:text-5xl font-extrabold text-white mb-4 leading-tight">
+            Trouvez votre alternance ou stage
+          </h1>
+          <p className="text-lg text-white/70 mb-10 max-w-xl mx-auto">
+            Des offres sélectionnées pour les étudiants ACE Education Group
+          </p>
 
-        {/* Loading — skeleton grid */}
-        {loading && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {Array.from({ length: 9 }).map((_, i) => (
-              <JobCardSkeleton key={i} />
+          {/* Search bar — client component */}
+          <HomeSearchBar />
+
+          {/* School pill links */}
+          <div className="flex flex-wrap justify-center gap-2 mt-6">
+            {SCHOOLS.map(s => (
+              <Link key={s.key} href={`/jobboard/school/${s.key}`}
+                className="px-4 py-1.5 rounded-full text-sm font-medium bg-white/10 text-white hover:bg-white/20 transition-colors border border-white/20">
+                {s.label}
+              </Link>
             ))}
           </div>
-        )}
+        </div>
+      </section>
 
-        {/* Error */}
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-4 text-sm">
-            {error}
-          </div>
-        )}
-
-        {/* Empty state */}
-        {!loading && !error && jobs.length === 0 && (
-          <div className="text-center py-20 bg-white rounded-2xl border border-gray-100 shadow-sm">
-            <div className="mx-auto w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mb-4">
-              <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-                  d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                />
-              </svg>
+      {/* Stats strip */}
+      <div className="bg-navy/90 border-t border-white/10 py-4">
+        <div className="container mx-auto px-4">
+          <div className="flex flex-wrap justify-center gap-8 md:gap-16">
+            <div className="text-center">
+              <div className="text-2xl font-extrabold text-white">{totalJobs}</div>
+              <div className="text-xs text-white/50">Offres totales</div>
             </div>
-            <h3 className="text-lg font-semibold text-gray-800">Aucune offre trouvée</h3>
-            <p className="mt-1 text-sm text-gray-400">
-              Essayez de modifier vos filtres pour voir plus d&apos;opportunités
-            </p>
-          </div>
-        )}
-
-        {/* Job grid */}
-        {!loading && jobs.length > 0 && (
-          <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-              {jobs.map((job, i) => (
-                <div
-                  key={job.id}
-                  className="animate-fade-up"
-                  style={{ animationDelay: `${Math.min(i * 40, 400)}ms` }}
-                >
-                  <JobCard
-                    job={job}
-                    savedJobIds={savedJobIds}
-                    isAuthenticated={status === "authenticated"}
-                  />
-                </div>
-              ))}
-            </div>
-
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="flex items-center justify-center gap-2 mt-10">
-                <button
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  disabled={page === 1}
-                  className="p-2 rounded-lg border border-gray-200 text-gray-500 hover:border-navy hover:text-navy disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                </button>
-
-                {Array.from({ length: Math.min(7, totalPages) }, (_, i) => {
-                  // Show pages around current page
-                  let p: number
-                  if (totalPages <= 7) {
-                    p = i + 1
-                  } else if (page <= 4) {
-                    p = i + 1
-                    if (i === 6) p = totalPages
-                  } else if (page >= totalPages - 3) {
-                    p = totalPages - 6 + i
-                    if (i === 0) p = 1
-                  } else {
-                    const offsets = [-3, -2, -1, 0, 1, 2, 3]
-                    p = page + offsets[i]
-                    if (i === 0) p = 1
-                    if (i === 6) p = totalPages
-                  }
-                  return (
-                    <button
-                      key={p}
-                      onClick={() => setPage(p)}
-                      className={`w-9 h-9 rounded-lg text-sm font-medium transition-colors ${
-                        page === p
-                          ? "bg-navy text-white"
-                          : "border border-gray-200 text-gray-600 hover:border-navy hover:text-navy"
-                      }`}
-                    >
-                      {p}
-                    </button>
-                  )
-                })}
-
-                <button
-                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                  disabled={page === totalPages}
-                  className="p-2 rounded-lg border border-gray-200 text-gray-500 hover:border-navy hover:text-navy disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                >
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-
-                <span className="ml-2 text-xs text-gray-400">
-                  Page {page} sur {totalPages} &mdash; {totalJobs} offres
-                </span>
+            {SCHOOLS.map((s, i) => (
+              <div key={s.key} className="text-center">
+                <div className="text-2xl font-extrabold text-white">{schoolCounts[i] ?? 0}</div>
+                <div className="text-xs text-white/50">{s.filiere}</div>
               </div>
-            )}
-          </>
-        )}
+            ))}
+          </div>
+        </div>
       </div>
 
-      <footer className="bg-navy text-white/40 py-8 mt-12">
-        <div className="container mx-auto px-4 text-center">
-          <Image
-            src="/ace-logo.png"
-            alt="ACE Education"
-            width={100}
-            height={32}
-            className="h-8 w-auto object-contain mx-auto mb-3 opacity-60"
-          />
-          <p className="text-xs text-white/50">
-            &copy; {new Date().getFullYear()} ACE Education &mdash; AMOS &bull; CMH &bull; EIDM
-            &bull; ESDAC &bull; ENAAI
-          </p>
-          <p className="text-xs mt-1 text-white/30">
-            Plateforme d&apos;offres de stages et alternances pour les étudiants ACE
-          </p>
+      {/* Recent offers */}
+      <section className="py-14 bg-light">
+        <div className="container mx-auto px-4">
+          <h2 className="text-2xl font-bold text-navy mb-8">Offres récentes</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {recentSerialized.map(job => (
+              <JobCard key={job.id} job={job as unknown as Job} savedJobIds={[]} isAuthenticated={!!session?.user} publicMode />
+            ))}
+          </div>
+          <div className="text-center mt-10">
+            <Button asChild variant="outline" className="border-teal text-teal hover:bg-teal/5">
+              <Link href="/jobboard">Voir toutes les offres →</Link>
+            </Button>
+          </div>
+        </div>
+      </section>
+
+      {/* Per-school sections */}
+      {SCHOOLS.map((s, i) => (
+        <section key={s.key} className={i % 2 === 0 ? 'py-12 bg-white' : 'py-12 bg-light'}>
+          <div className="container mx-auto px-4">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-xl font-bold text-navy">{s.filiere}</h2>
+                <p className="text-sm text-gray-400">{schoolCounts[i]} offre{schoolCounts[i] !== 1 ? 's' : ''}</p>
+              </div>
+              <Link href={`/jobboard/school/${s.key}`} className="text-sm text-teal font-semibold hover:underline">
+                Voir tout →
+              </Link>
+            </div>
+            {schoolJobsSerialized[i].length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {schoolJobsSerialized[i].map(job => (
+                  <JobCard key={job.id} job={job as unknown as Job} savedJobIds={[]} isAuthenticated={!!session?.user} publicMode />
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-gray-400 italic">Aucune offre disponible pour le moment.</p>
+            )}
+          </div>
+        </section>
+      ))}
+
+      {/* Footer */}
+      <footer className="bg-navy py-8">
+        <div className="container mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="text-white/40 text-xs">
+            <Image src="/ace-logo.png" alt="ACE" width={80} height={26} className="h-6 w-auto opacity-60 mb-1" />
+            © {new Date().getFullYear()} ACE Education Group
+          </div>
+          <div className="flex gap-6 text-sm text-white/50">
+            <Link href="/jobboard" className="hover:text-white transition-colors">Jobboard</Link>
+            <Link href="/login" className="hover:text-white transition-colors">Se connecter</Link>
+            <Link href="/register" className="hover:text-white transition-colors">S&apos;inscrire</Link>
+          </div>
         </div>
       </footer>
-    </main>
+    </div>
   )
 }

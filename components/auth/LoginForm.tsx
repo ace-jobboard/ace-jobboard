@@ -90,7 +90,7 @@ export default function LoginForm() {
         type="button"
         onClick={handleMicrosoftLogin}
         disabled={isMicrosoftLoading}
-        className={`w-full flex items-center justify-center gap-2.5 border border-gray-200 rounded-lg py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-60 ${!isMicrosoftConfigured ? "opacity-50" : ""}`}
+        className={`w-full flex items-center justify-center gap-2.5 border border-navy rounded-lg py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-60 ${!isMicrosoftConfigured ? "opacity-50" : ""}`}
       >
         {isMicrosoftLoading ? (
           <Loader2 className="w-4 h-4 animate-spin" />

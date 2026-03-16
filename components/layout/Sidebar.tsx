@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation"
 import { useState, useEffect } from "react"
 import {
   LayoutDashboard, Briefcase, GraduationCap, ClipboardList,
-  Building2, Settings, Users, Bookmark,
+  Building2, Settings, Users, Bookmark, FileText,
 } from "lucide-react"
 
 const NAV = [
@@ -16,6 +16,7 @@ const NAV = [
       { icon: Briefcase,       label: "Offers",               href: "/offers" },
       { icon: GraduationCap,   label: "Students",             href: "/students" },
       { icon: Bookmark,        label: "Mes offres sauvegardées", href: "/dashboard/saved-jobs", savedBadge: true },
+      { icon: FileText,        label: "Mes candidatures",        href: "/dashboard/applications" },
     ],
   },
   {

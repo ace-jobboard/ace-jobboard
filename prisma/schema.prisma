@@ -44,7 +44,8 @@ model Job {
   apifyActorId String?
   rawData      Json?
 
-  savedBy SavedJob[]
+  savedBy      SavedJob[]
+  applications JobApplication[]
 
   @@index([filiere])
   @@index([niveau])
@@ -108,9 +109,10 @@ model User {
   role String @default("USER") // "USER" | "ADMIN"
 
   // Relations
-  accounts  Account[]
-  sessions  Session[]
-  savedJobs SavedJob[]
+  accounts     Account[]
+  sessions     Session[]
+  savedJobs    SavedJob[]
+  applications JobApplication[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -160,6 +162,20 @@ model StudentWhitelist {
   expiresAt        DateTime
 
   @@index([email])
+}
+
+model JobApplication {
+  id        String   @id @default(cuid())
+  userId    String
+  jobId     String
+  appliedAt DateTime @default(now())
+  status    String   @default("applied")
+  notes     String?
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  job       Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, jobId])
 }
 
 model SavedJob {
