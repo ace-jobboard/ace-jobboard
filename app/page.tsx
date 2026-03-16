@@ -10,8 +10,11 @@ import JobCardSkeleton from "@/components/JobCardSkeleton"
 import UserNav from "@/components/auth/UserNav"
 import { Button } from "@/components/ui/button"
 import { Job, JobFilters } from "@/types/job"
+import { ChevronLeft, ChevronRight } from "lucide-react"
 
-const filiereLabels = [
+const PAGE_SIZE = 25
+
+const FILIERE_LABELS = [
   "Sport Management",
   "Hôtellerie & Luxe",
   "Mode & Luxe",
@@ -20,10 +23,10 @@ const filiereLabels = [
 ]
 
 const filiereColors: Record<string, string> = {
-  "Sport Management":        "text-green-600",
-  "Hôtellerie & Luxe":       "text-blue-900",
-  "Mode & Luxe":             "text-purple-600",
-  "Design":                  "text-orange-500",
+  "Sport Management":         "text-green-600",
+  "Hôtellerie & Luxe":        "text-blue-900",
+  "Mode & Luxe":              "text-purple-600",
+  "Design":                   "text-orange-500",
   "Illustration & Animation": "text-red-600",
 }
 
@@ -31,10 +34,29 @@ export default function Home() {
   const { data: session, status } = useSession()
   const [jobs, setJobs] = useState<Job[]>([])
   const [totalJobs, setTotalJobs] = useState(0)
+  const [totalPages, setTotalPages] = useState(1)
+  const [page, setPage] = useState(1)
   const [filters, setFilters] = useState<JobFilters>({})
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [savedJobIds, setSavedJobIds] = useState<string[]>([])
+
+  // Filiere breakdown counts — fetched once from DB groupBy (not computed from page slice)
+  const [breakdown, setBreakdown] = useState<Record<string, number>>({})
+  const [breakdownTotal, setBreakdownTotal] = useState(0)
+
+  // Fetch filiere breakdown once (no filters applied — shows global totals)
+  useEffect(() => {
+    fetch("/api/jobs?format=breakdown")
+      .then((r) => r.json())
+      .then((data: { breakdown: { filiere: string; count: number }[]; total: number }) => {
+        const map: Record<string, number> = {}
+        for (const row of data.breakdown ?? []) map[row.filiere] = row.count
+        setBreakdown(map)
+        setBreakdownTotal(data.total ?? 0)
+      })
+      .catch(() => {})
+  }, [])
 
   const fetchJobs = useCallback(async () => {
     try {
@@ -47,21 +69,31 @@ export default function Home() {
       if (filters.region) params.append("region", filters.region)
       if (filters.contractType) params.append("contractType", filters.contractType)
       if (filters.search) params.append("search", filters.search)
-      params.append("limit", "9999") // load all jobs so filiere counts are accurate
+      params.append("limit", String(PAGE_SIZE))
+      params.append("page", String(page))
 
       const response = await fetch(`/api/jobs?${params.toString()}`)
       if (!response.ok) throw new Error("Erreur lors du chargement des offres")
 
       const data = await response.json()
-      const jobList = Array.isArray(data) ? data : (data.jobs ?? [])
-      setJobs(jobList)
-      setTotalJobs(data.total ?? jobList.length)
+      setJobs(Array.isArray(data) ? data : (data.jobs ?? []))
+      setTotalJobs(data.total ?? 0)
+      setTotalPages(data.pages ?? 1)
     } catch (err) {
       setError(err instanceof Error ? err.message : "Une erreur est survenue")
     } finally {
       setLoading(false)
     }
+  }, [filters, page])
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setPage(1)
   }, [filters])
+
+  useEffect(() => {
+    fetchJobs()
+  }, [fetchJobs])
 
   useEffect(() => {
     if (session?.user) {
@@ -74,16 +106,12 @@ export default function Home() {
     }
   }, [session])
 
-  useEffect(() => {
-    fetchJobs()
-  }, [fetchJobs])
-
   const handleFilterChange = (newFilters: JobFilters) => {
     setFilters((prev) => ({ ...prev, ...newFilters }))
   }
 
-  const countByFiliere = (filiere: string) =>
-    jobs.filter((j) => j.filiere === filiere).length
+  // When a filiere filter is active, use the filtered total; otherwise use DB breakdown
+  const displayTotal = Object.values(filters).some(Boolean) ? totalJobs : breakdownTotal
 
   return (
     <main className="min-h-screen bg-light">
@@ -109,9 +137,7 @@ export default function Home() {
               </div>
               <div className="flex items-center gap-3">
                 {status === "authenticated" && session?.user ? (
-                  <>
-                    <UserNav user={session.user} />
-                  </>
+                  <UserNav user={session.user} />
                 ) : (
                   <>
                     <Link
@@ -139,21 +165,21 @@ export default function Home() {
       </div>
 
       <div className="container mx-auto px-4 py-8">
-        {/* Stats — scrolls with content */}
-        {!loading && !error && jobs.length > 0 && (
+        {/* Stats card — DB-level counts, always accurate */}
+        {breakdownTotal > 0 && (
           <div className="animate-fade-up bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-8 hover:shadow-md transition-shadow duration-200">
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-4">
               Aperçu des offres
             </p>
             <div className="grid grid-cols-3 md:grid-cols-6 gap-4">
               <div className="col-span-3 md:col-span-1 text-center md:border-r border-gray-100 md:pr-4">
-                <div className="text-4xl font-extrabold text-gray-900 leading-none">{totalJobs}</div>
+                <div className="text-4xl font-extrabold text-gray-900 leading-none">{displayTotal}</div>
                 <div className="text-xs text-gray-500 mt-1.5 font-medium">Offres disponibles</div>
               </div>
-              {filiereLabels.map((f) => (
+              {FILIERE_LABELS.map((f) => (
                 <div key={f} className="text-center">
                   <div className={`text-2xl font-bold leading-none ${filiereColors[f] ?? "text-gray-700"}`}>
-                    {countByFiliere(f)}
+                    {breakdown[f] ?? 0}
                   </div>
                   <div className="text-xs text-gray-400 mt-1.5 leading-tight">{f}</div>
                 </div>
@@ -197,21 +223,80 @@ export default function Home() {
 
         {/* Job grid */}
         {!loading && jobs.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {jobs.map((job, i) => (
-              <div
-                key={job.id}
-                className="animate-fade-up"
-                style={{ animationDelay: `${Math.min(i * 40, 400)}ms` }}
-              >
-                <JobCard
-                  job={job}
-                  savedJobIds={savedJobIds}
-                  isAuthenticated={status === "authenticated"}
-                />
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+              {jobs.map((job, i) => (
+                <div
+                  key={job.id}
+                  className="animate-fade-up"
+                  style={{ animationDelay: `${Math.min(i * 40, 400)}ms` }}
+                >
+                  <JobCard
+                    job={job}
+                    savedJobIds={savedJobIds}
+                    isAuthenticated={status === "authenticated"}
+                  />
+                </div>
+              ))}
+            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-center gap-2 mt-10">
+                <button
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                  className="p-2 rounded-lg border border-gray-200 text-gray-500 hover:border-navy hover:text-navy disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+
+                {Array.from({ length: Math.min(7, totalPages) }, (_, i) => {
+                  // Show pages around current page
+                  let p: number
+                  if (totalPages <= 7) {
+                    p = i + 1
+                  } else if (page <= 4) {
+                    p = i + 1
+                    if (i === 6) p = totalPages
+                  } else if (page >= totalPages - 3) {
+                    p = totalPages - 6 + i
+                    if (i === 0) p = 1
+                  } else {
+                    const offsets = [-3, -2, -1, 0, 1, 2, 3]
+                    p = page + offsets[i]
+                    if (i === 0) p = 1
+                    if (i === 6) p = totalPages
+                  }
+                  return (
+                    <button
+                      key={p}
+                      onClick={() => setPage(p)}
+                      className={`w-9 h-9 rounded-lg text-sm font-medium transition-colors ${
+                        page === p
+                          ? "bg-navy text-white"
+                          : "border border-gray-200 text-gray-600 hover:border-navy hover:text-navy"
+                      }`}
+                    >
+                      {p}
+                    </button>
+                  )
+                })}
+
+                <button
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={page === totalPages}
+                  className="p-2 rounded-lg border border-gray-200 text-gray-500 hover:border-navy hover:text-navy disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+
+                <span className="ml-2 text-xs text-gray-400">
+                  Page {page} sur {totalPages} &mdash; {totalJobs} offres
+                </span>
               </div>
-            ))}
-          </div>
+            )}
+          </>
         )}
       </div>
 

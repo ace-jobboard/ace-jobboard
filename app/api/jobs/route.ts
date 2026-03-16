@@ -7,6 +7,20 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url)
 
+    // Lightweight breakdown mode — returns filiere groupBy counts (no auth required)
+    if (searchParams.get("format") === "breakdown") {
+      const breakdown = await prisma.job.groupBy({
+        by: ["filiere"],
+        _count: { id: true },
+        where: { isActive: true, NOT: [{ source: "adzuna" }, { filiere: "_dump" }] },
+      })
+      const total = breakdown.reduce((sum, r) => sum + r._count.id, 0)
+      return NextResponse.json({
+        breakdown: breakdown.map((r) => ({ filiere: r.filiere, count: r._count.id })),
+        total,
+      })
+    }
+
     const filiere      = searchParams.get("filiere")
     const school       = searchParams.get("school")   // AMOS, CMH, etc. OR filiere string
     const niveau       = searchParams.get("niveau")
