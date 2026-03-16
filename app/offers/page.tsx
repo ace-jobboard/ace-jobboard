@@ -26,7 +26,7 @@ interface Job {
 
 type SortKey = "company" | "title" | "contractType" | "filiere" | "source" | "location" | "createdAt" | "isApproved"
 type SortDir = "asc" | "desc"
-type TabKey = "all" | "Alternance" | "Stage" | "other"
+type TabKey = "all" | "Alternance" | "Stage" | "other" | "pending"
 
 const SCHOOLS  = ["AMOS", "CMH", "EIDM", "ESDAC", "ENAAI"]
 const SOURCES  = ["wttj", "linkedin", "indeed"]
@@ -69,10 +69,14 @@ export default function OffersPage() {
   const [limit,         setLimit]         = useState(parseInt(searchParams.get("limit") ?? "25", 10))
   const [showFilters,   setShowFilters]   = useState(false)
 
-  const [jobs,     setJobs]     = useState<Job[]>([])
-  const [total,    setTotal]    = useState(0)
-  const [loading,  setLoading]  = useState(true)
-  const [syncing,  setSyncing]  = useState(false)
+  const [jobs,         setJobs]         = useState<Job[]>([])
+  const [total,        setTotal]        = useState(0)
+  const [pendingCount, setPendingCount] = useState(0)
+  const [loading,      setLoading]      = useState(true)
+  const [syncing,      setSyncing]      = useState(false)
+  const [lastSync,     setLastSync]     = useState<string | null>(null)
+  // Optimistic approval: track per-id overrides
+  const [approvalOverrides, setApprovalOverrides] = useState<Record<string, boolean>>({})
 
   // Debounce search
   const searchDebounce = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -118,16 +122,20 @@ export default function OffersPage() {
         params.set("contract", tab)
       } else if (tab === "other") {
         // fetch without contract filter, filter client-side
+      } else if (tab === "pending") {
+        params.set("approved", "false")
       }
 
       const res  = await fetch(`/api/jobs?${params}`)
       const data = await res.json() as { jobs?: Job[]; total?: number }
-      let jobs = data.jobs ?? []
+      let fetchedJobs = data.jobs ?? []
       if (tab === "other") {
-        jobs = jobs.filter((j) => j.contractType !== "Alternance" && j.contractType !== "Stage")
+        fetchedJobs = fetchedJobs.filter((j) => j.contractType !== "Alternance" && j.contractType !== "Stage")
       }
-      setJobs(jobs)
+      setJobs(fetchedJobs)
       setTotal(data.total ?? 0)
+      // Reset approval overrides when we reload
+      setApprovalOverrides({})
     } finally {
       setLoading(false)
     }
@@ -135,13 +143,52 @@ export default function OffersPage() {
 
   useEffect(() => { void fetchJobs() }, [fetchJobs])
 
+  // Fetch pending count and lastSync on mount
+  useEffect(() => {
+    void (async () => {
+      try {
+        const res = await fetch("/api/dashboard/stats")
+        if (res.ok) {
+          const data = await res.json() as { pendingApproval?: number; lastSync?: string | null }
+          setPendingCount(data.pendingApproval ?? 0)
+          setLastSync(data.lastSync ?? null)
+        }
+      } catch {
+        // ignore
+      }
+    })()
+  }, [])
+
   async function handleSync() {
     setSyncing(true)
     try {
       const res  = await fetch("/api/sync", { method: "POST" })
-      const data = await res.json() as { synced?: number; skipped?: number; saved?: number; filtered?: number }
-      toast.success(`Sync complete: ${data.saved ?? data.synced ?? 0} saved, ${data.filtered ?? data.skipped ?? 0} filtered`)
+      const data = await res.json() as {
+        totals?: { fetched: number; saved: number; duplicates: number; filtered: number }
+        durationMs?: number
+        errors?: string[]
+        // Legacy fallback
+        saved?: number; filtered?: number; synced?: number
+      }
+      if (data.totals) {
+        const t = data.totals
+        const secs = Math.round((data.durationMs ?? 0) / 1000)
+        toast.success("✅ Sync complete", {
+          description: `${t.saved} saved · ${t.duplicates} duplicates · ${t.filtered} filtered · ${secs}s`,
+        })
+      } else {
+        toast.success(`Sync complete: ${data.saved ?? data.synced ?? 0} saved, ${data.filtered ?? 0} filtered`)
+      }
       void fetchJobs()
+      // Refresh lastSync
+      try {
+        const statsRes = await fetch("/api/dashboard/stats")
+        if (statsRes.ok) {
+          const stats = await statsRes.json() as { pendingApproval?: number; lastSync?: string | null }
+          setPendingCount(stats.pendingApproval ?? 0)
+          setLastSync(stats.lastSync ?? null)
+        }
+      } catch { /* ignore */ }
     } catch {
       toast.error("Sync failed")
     } finally {
@@ -162,16 +209,30 @@ export default function OffersPage() {
   }
 
   async function handleToggleApproved(job: Job) {
-    const res = await fetch(`/api/admin/jobs/${job.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ isApproved: !job.isApproved }),
-    })
-    if (res.ok) {
-      setJobs((prev) => prev.map((j) => j.id === job.id ? { ...j, isApproved: !job.isApproved } : j))
-      toast.success(job.isApproved ? "Offer un-approved" : "Offer approved")
-    } else {
-      toast.error("Update failed")
+    const currentApproved = approvalOverrides[job.id] !== undefined
+      ? approvalOverrides[job.id]
+      : job.isApproved
+    const newApproved = !currentApproved
+    // Optimistic update
+    setApprovalOverrides((prev) => ({ ...prev, [job.id]: newApproved }))
+    try {
+      const res = await fetch(`/api/admin/jobs/${job.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isApproved: newApproved }),
+      })
+      if (res.ok) {
+        toast.success(newApproved ? "Offer approved" : "Approval revoked")
+        setPendingCount((c) => newApproved ? Math.max(0, c - 1) : c + 1)
+      } else {
+        // Revert
+        setApprovalOverrides((prev) => ({ ...prev, [job.id]: currentApproved }))
+        toast.error("Failed to update approval status")
+      }
+    } catch {
+      // Revert
+      setApprovalOverrides((prev) => ({ ...prev, [job.id]: currentApproved }))
+      toast.error("Failed to update approval status")
     }
   }
 
@@ -198,11 +259,12 @@ export default function OffersPage() {
 
   const totalPages = Math.ceil(total / limit)
 
-  const tabs: { key: TabKey; label: string }[] = [
+  const tabs: { key: TabKey; label: string; orange?: boolean }[] = [
     { key: "all",        label: `All (${total})` },
     { key: "Alternance", label: "Alternance" },
     { key: "Stage",      label: "Stage" },
     { key: "other",      label: "Other" },
+    { key: "pending",    label: pendingCount > 0 ? `Pending (${pendingCount})` : "Pending", orange: pendingCount > 0 },
   ]
 
   const columns: [SortKey, string][] = [
@@ -226,14 +288,19 @@ export default function OffersPage() {
             {total.toLocaleString()}
           </span>
         </h2>
-        <button
-          onClick={handleSync}
-          disabled={syncing}
-          className="flex items-center gap-2 px-4 py-2 bg-navy text-white rounded-lg text-sm font-medium hover:bg-navy/90 disabled:opacity-60 transition-colors"
-        >
-          <RefreshCw size={15} className={syncing ? "animate-spin" : ""} />
-          {syncing ? "Syncing…" : "+ Sync"}
-        </button>
+        <div className="flex flex-col items-end gap-1">
+          <button
+            onClick={handleSync}
+            disabled={syncing}
+            className="flex items-center gap-2 px-4 py-2 bg-navy text-white rounded-lg text-sm font-medium hover:bg-navy/90 disabled:opacity-60 transition-colors"
+          >
+            <RefreshCw size={15} className={syncing ? "animate-spin" : ""} />
+            {syncing ? "Syncing…" : "+ Sync"}
+          </button>
+          {lastSync && (
+            <p className="text-xs text-gray-400">Last synced: {lastSync}</p>
+          )}
+        </div>
       </div>
 
       {/* Search + filter toggle */}
@@ -355,7 +422,9 @@ export default function OffersPage() {
             className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px ${
               tab === t.key
                 ? "text-teal border-teal"
-                : "text-gray-500 border-transparent hover:text-gray-700"
+                : t.orange
+                  ? "text-orange-500 border-transparent hover:text-orange-600"
+                  : "text-gray-500 border-transparent hover:text-gray-700"
             }`}
           >
             {t.label}
@@ -427,17 +496,24 @@ export default function OffersPage() {
                     <td className="px-4 py-3 text-gray-500 text-xs truncate max-w-[120px]">{job.location}</td>
                     <td className="px-4 py-3 text-gray-400 text-xs whitespace-nowrap">{daysAgo(job.createdAt)}</td>
                     <td className="px-4 py-3">
-                      <button
-                        onClick={() => handleToggleApproved(job)}
-                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border cursor-pointer transition-colors ${
-                          job.isApproved
-                            ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
-                            : "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100"
-                        }`}
-                        title="Toggle approval"
-                      >
-                        {job.isApproved ? "Approved" : "Pending"}
-                      </button>
+                      {(() => {
+                        const isApproved = approvalOverrides[job.id] !== undefined
+                          ? approvalOverrides[job.id]
+                          : job.isApproved
+                        return (
+                          <button
+                            onClick={() => handleToggleApproved(job)}
+                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border cursor-pointer transition-colors ${
+                              isApproved
+                                ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
+                                : "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100"
+                            }`}
+                            title="Toggle approval"
+                          >
+                            {isApproved ? "Approved" : "Pending"}
+                          </button>
+                        )
+                      })()}
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex gap-1">

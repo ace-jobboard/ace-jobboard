@@ -1,9 +1,11 @@
 "use client"
 
 import { useState } from "react"
-import { Bookmark, Trash2, ExternalLink, MapPin } from "lucide-react"
+import { Trash2, ExternalLink, MapPin } from "lucide-react"
+import Link from "next/link"
 import { toast } from "sonner"
 import { Job } from "@/types/job"
+import EmptyState from "@/components/ui/empty-state"
 
 interface SavedJob extends Job {
   savedAt: Date | string
@@ -61,20 +63,14 @@ export default function SavedJobsGrid({ initialJobs }: { initialJobs: SavedJob[]
 
   if (jobs.length === 0) {
     return (
-      <div className="text-center py-20 bg-white rounded-2xl border border-gray-100 shadow-sm animate-fade-up">
-        <div className="mx-auto w-14 h-14 bg-gray-100 rounded-2xl flex items-center justify-center mb-4">
-          <Bookmark className="w-7 h-7 text-gray-400" />
-        </div>
-        <h3 className="text-lg font-semibold text-gray-800">Aucune offre sauvegardée</h3>
-        <p className="text-sm text-gray-400 mt-1 max-w-xs mx-auto">
-          Cliquez sur le cœur d&apos;une offre pour la retrouver ici
-        </p>
-        <a
-          href="/"
-          className="inline-block mt-6 px-4 py-2 rounded-lg border border-gray-200 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+      <div className="flex flex-col items-center">
+        <EmptyState message="Aucune offre sauvegardée" />
+        <Link
+          href="/jobboard"
+          className="mt-4 px-4 py-2 rounded-lg border border-teal text-teal text-sm font-medium hover:bg-teal hover:text-white transition-colors"
         >
-          Explorer les offres
-        </a>
+          Parcourir les offres →
+        </Link>
       </div>
     )
   }

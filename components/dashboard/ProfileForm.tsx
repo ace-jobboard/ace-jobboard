@@ -16,6 +16,17 @@ type ProfileFormValues = {
   phone?: string
 }
 
+type ContractPref = "Alternance" | "Stage" | "Both" | "Any"
+type FrequencyPref = "Daily" | "Weekly"
+
+interface UserPreferences {
+  contract?: ContractPref
+  regions?: string[]
+  alerts?: boolean
+  frequency?: FrequencyPref
+  [key: string]: unknown
+}
+
 const SCHOOLS = ["AMOS", "CMH", "EIDM", "ESDAC", "ENAAI"] as const
 const EDUCATION_LEVELS = ["Bac+3", "Bac+4", "Bac+5"] as const
 const SCHOOL_LABELS: Record<string, string> = {
@@ -26,6 +37,21 @@ const SCHOOL_LABELS: Record<string, string> = {
   ENAAI: "ENAAI — Illustration & Animation",
 }
 
+const REGIONS = [
+  "Île-de-France",
+  "PACA",
+  "Auvergne-Rhône-Alpes",
+  "Occitanie",
+  "Other",
+]
+
+const CONTRACT_OPTIONS: { value: ContractPref; label: string }[] = [
+  { value: "Alternance", label: "Alternance" },
+  { value: "Stage",      label: "Stage" },
+  { value: "Both",       label: "Both" },
+  { value: "Any",        label: "Any" },
+]
+
 interface ProfileFormProps {
   user: {
     name?: string | null
@@ -35,6 +61,7 @@ interface ProfileFormProps {
     graduationYear?: number | null
     specialization?: string | null
     phone?: string | null
+    preferences?: unknown
   }
   completionPercent: number
 }
@@ -42,14 +69,30 @@ interface ProfileFormProps {
 const inputClass = "w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition disabled:bg-gray-50 disabled:text-gray-400"
 const labelClass = "block text-sm font-medium text-gray-700 mb-1"
 
+function parsePreferences(raw: unknown): UserPreferences {
+  if (raw && typeof raw === "object" && !Array.isArray(raw)) {
+    return raw as UserPreferences
+  }
+  return {}
+}
+
 export default function ProfileForm({ user, completionPercent }: ProfileFormProps) {
   const [isLoading, setIsLoading] = useState(false)
+  const [isSavingPrefs, setIsSavingPrefs] = useState(false)
+
+  const existingPrefs = parsePreferences(user.preferences)
+
+  const [prefContract,  setPrefContract]  = useState<ContractPref>(existingPrefs.contract ?? "Any")
+  const [prefRegions,   setPrefRegions]   = useState<string[]>(existingPrefs.regions ?? [])
+  const [prefAlerts,    setPrefAlerts]    = useState<boolean>(existingPrefs.alerts ?? false)
+  const [prefFrequency, setPrefFrequency] = useState<FrequencyPref>(existingPrefs.frequency ?? "Weekly")
 
   const {
     register,
     handleSubmit,
     formState: { errors, isDirty },
   } = useForm<ProfileFormValues>({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     resolver: zodResolver(profileSchema) as any,
     defaultValues: {
       name:           user.name ?? "",
@@ -70,7 +113,7 @@ export default function ProfileForm({ user, completionPercent }: ProfileFormProp
         body: JSON.stringify(data),
       })
       if (!response.ok) {
-        const error = await response.json()
+        const error = await response.json() as { error?: string }
         throw new Error(error.error || "Erreur lors de la mise à jour")
       }
       toast.success("Profil mis à jour !")
@@ -79,6 +122,39 @@ export default function ProfileForm({ user, completionPercent }: ProfileFormProp
     } finally {
       setIsLoading(false)
     }
+  }
+
+  async function onSavePreferences() {
+    setIsSavingPrefs(true)
+    try {
+      const newPrefs: UserPreferences = {
+        ...existingPrefs,
+        contract:  prefContract,
+        regions:   prefRegions,
+        alerts:    prefAlerts,
+        frequency: prefFrequency,
+      }
+      const response = await fetch("/api/user/profile", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ preferences: newPrefs }),
+      })
+      if (!response.ok) {
+        const error = await response.json() as { error?: string }
+        throw new Error(error.error || "Erreur lors de la mise à jour")
+      }
+      toast.success("Preferences saved ✓")
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Une erreur est survenue")
+    } finally {
+      setIsSavingPrefs(false)
+    }
+  }
+
+  function toggleRegion(region: string) {
+    setPrefRegions((prev) =>
+      prev.includes(region) ? prev.filter((r) => r !== region) : [...prev, region]
+    )
   }
 
   const completionColor =
@@ -169,6 +245,91 @@ export default function ProfileForm({ user, completionPercent }: ProfileFormProp
             Sauvegarder les modifications
           </button>
         </form>
+      </div>
+
+      {/* Job preferences */}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+        <h3 className="text-base font-semibold text-gray-900 mb-1">Job preferences</h3>
+        <p className="text-sm text-gray-400 mb-5">Personnalisez vos préférences de recherche</p>
+
+        <div className="space-y-5">
+          {/* Preferred contract */}
+          <div>
+            <p className={labelClass}>Preferred contract</p>
+            <div className="flex flex-wrap gap-3 mt-1">
+              {CONTRACT_OPTIONS.map((opt) => (
+                <label key={opt.value} className="flex items-center gap-2 text-sm cursor-pointer">
+                  <input
+                    type="radio"
+                    name="prefContract"
+                    value={opt.value}
+                    checked={prefContract === opt.value}
+                    onChange={() => setPrefContract(opt.value)}
+                    className="accent-teal"
+                  />
+                  {opt.label}
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* Preferred regions */}
+          <div>
+            <p className={labelClass}>Preferred regions</p>
+            <div className="flex flex-wrap gap-3 mt-1">
+              {REGIONS.map((region) => (
+                <label key={region} className="flex items-center gap-2 text-sm cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={prefRegions.includes(region)}
+                    onChange={() => toggleRegion(region)}
+                    className="accent-teal"
+                  />
+                  {region}
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* Email alerts toggle */}
+          <div className="flex items-center gap-3">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={prefAlerts}
+                onChange={(e) => setPrefAlerts(e.target.checked)}
+                className="accent-teal w-4 h-4"
+              />
+              <span className="text-sm font-medium text-gray-700">Email alerts</span>
+            </label>
+          </div>
+
+          {/* Alert frequency — only when alerts enabled */}
+          {prefAlerts && (
+            <div>
+              <label htmlFor="alertFrequency" className={labelClass}>Alert frequency</label>
+              <select
+                id="alertFrequency"
+                value={prefFrequency}
+                onChange={(e) => setPrefFrequency(e.target.value as FrequencyPref)}
+                className={inputClass}
+                style={{ maxWidth: 200 }}
+              >
+                <option value="Daily">Daily</option>
+                <option value="Weekly">Weekly</option>
+              </select>
+            </div>
+          )}
+
+          <button
+            onClick={onSavePreferences}
+            disabled={isSavingPrefs}
+            className="flex items-center gap-2 bg-gray-900 hover:bg-gray-700 text-white font-semibold text-sm rounded-lg px-5 py-2.5 transition-colors disabled:opacity-50"
+          >
+            {isSavingPrefs && <Loader2 className="w-4 h-4 animate-spin" />}
+            Sauvegarder les préférences
+          </button>
+        </div>
       </div>
     </div>
   )

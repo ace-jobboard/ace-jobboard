@@ -45,11 +45,23 @@ export async function PUT(request: Request) {
   try {
     const body = await request.json()
 
-    // Handle preferences update separately
+    // Handle preferences update separately (merge with existing)
     if (body.preferences !== undefined) {
+      const currentUser = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { preferences: true },
+      })
+      const existing = (currentUser?.preferences && typeof currentUser.preferences === "object" && !Array.isArray(currentUser.preferences))
+        ? currentUser.preferences as Record<string, unknown>
+        : {}
+      const incoming = (typeof body.preferences === "object" && body.preferences !== null && !Array.isArray(body.preferences))
+        ? body.preferences as Record<string, unknown>
+        : {}
+      const merged: Record<string, unknown> = { ...existing, ...incoming }
       await prisma.user.update({
         where: { id: session.user.id },
-        data: { preferences: body.preferences },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        data: { preferences: merged as any },
       })
       return NextResponse.json({ message: "Préférences mises à jour" })
     }

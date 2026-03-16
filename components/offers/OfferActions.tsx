@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { Clipboard, Trash2, ExternalLink, CheckCircle, XCircle } from "lucide-react"
+import { Clipboard, Trash2, ExternalLink, CheckCircle } from "lucide-react"
 import { toast } from "sonner"
 
 interface Props {
@@ -34,14 +34,16 @@ export default function OfferActions({ id, url, isApproved: initialApproved }: P
   }
 
   async function handleToggleApproval() {
+    const newApproved = !approved
     const res = await fetch(`/api/admin/jobs/${id}`, {
       method:  "PATCH",
       headers: { "Content-Type": "application/json" },
-      body:    JSON.stringify({ isApproved: !approved }),
+      body:    JSON.stringify({ isApproved: newApproved }),
     })
     if (res.ok) {
-      setApproved((v) => !v)
-      toast.success(approved ? "Offer un-approved" : "Offer approved")
+      setApproved(newApproved)
+      toast.success(newApproved ? "Offer approved" : "Approval revoked")
+      router.refresh()
     } else {
       toast.error("Update failed")
     }
@@ -74,17 +76,28 @@ export default function OfferActions({ id, url, isApproved: initialApproved }: P
         {copied ? "Copied!" : "Copy link"}
       </button>
 
-      <button
-        onClick={handleToggleApproval}
-        className={`flex items-center justify-center gap-2 w-full px-4 py-2.5 rounded-lg text-sm font-medium border transition-colors ${
-          approved
-            ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
-            : "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100"
-        }`}
-      >
-        {approved ? <CheckCircle size={15} /> : <XCircle size={15} />}
-        {approved ? "Approved — click to un-approve" : "Pending — click to approve"}
-      </button>
+      {/* Approval section */}
+      {approved ? (
+        <div className="space-y-1">
+          <div className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-emerald-50 text-emerald-700 text-sm font-medium">
+            <CheckCircle size={15} />
+            <span>✓ Approved</span>
+          </div>
+          <button
+            onClick={handleToggleApproval}
+            className="w-full text-xs text-red-500 hover:text-red-700 hover:underline text-center py-1 transition-colors"
+          >
+            Revoke approval
+          </button>
+        </div>
+      ) : (
+        <button
+          onClick={handleToggleApproval}
+          className="flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-navy text-white rounded-lg text-sm font-medium hover:bg-navy/90 transition-colors"
+        >
+          Approve this offer
+        </button>
+      )}
 
       <button
         onClick={handleDelete}
