@@ -59,8 +59,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       const email = user.email
       if (!email) return true
 
-      // Admin emails skip HubSpot check
+      // Admin emails (env list) or DB admins skip HubSpot check
       if (isAdminEmail(email)) return true
+      const dbRole = await prisma.user.findUnique({ where: { email }, select: { role: true } })
+      if (dbRole?.role === 'ADMIN') return true
 
       try {
         const whitelist = await prisma.studentWhitelist.findUnique({ where: { email } })
