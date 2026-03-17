@@ -9,11 +9,18 @@ import DashboardCharts from "@/components/dashboard/DashboardCharts"
 import { APIFY_TASKS } from "@/config/tasks"
 import Link from "next/link"
 
+type RecommendedJob = {
+  id: string; title: string; company: string; location: string | null
+  filiere: string; contractType: string; createdAt: Date; source: string
+}
+
 export default async function DashboardPage() {
   const session = await auth()
   if (!session?.user) redirect("/login")
 
   const isAdmin = (session.user as { role?: string }).role === "ADMIN"
+
+  const userId = session.user.id
 
   const [totalJobs, activeJobs, pendingApproval, scrapeRuns] = await Promise.all([
     prisma.job.count({ where: { filiere: { not: "_dump" } } }),
@@ -43,6 +50,36 @@ export default async function DashboardPage() {
       take: 5,
     }),
   ])
+
+  // Fetch user's school for recommendations
+  const dbUser = await prisma.user.findUnique({ where: { id: userId }, select: { school: true } })
+  const userSchool = dbUser?.school ?? null
+
+  let recommendedJobs: RecommendedJob[] = []
+  if (userSchool) {
+    const [savedJobIds, applicationJobIds] = await Promise.all([
+      prisma.savedJob.findMany({ where: { userId }, select: { jobId: true } }),
+      prisma.jobApplication.findMany({ where: { userId }, select: { jobId: true } }).catch(() => []),
+    ])
+    const excludeIds = [
+      ...savedJobIds.map(s => s.jobId),
+      ...applicationJobIds.map(a => a.jobId),
+    ]
+    recommendedJobs = await prisma.job.findMany({
+      where: {
+        isActive: true,
+        isApproved: true,
+        filiere: userSchool,
+        id: excludeIds.length > 0 ? { notIn: excludeIds } : undefined,
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 6,
+      select: {
+        id: true, title: true, company: true, location: true, filiere: true,
+        contractType: true, createdAt: true, source: true,
+      },
+    })
+  }
 
   const lastUpdated = scrapeRuns?.completedAt
     ? new Date(scrapeRuns.completedAt).toLocaleDateString("fr-FR", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })
@@ -183,6 +220,38 @@ export default async function DashboardPage() {
             </table>
           )}
         </div>
+      </div>
+      {/* Recommended jobs */}
+      <div className="mt-10">
+        <h2 className="text-lg font-bold text-navy mb-4">
+          Offres recommandées pour vous
+          {userSchool && <span className="ml-2 text-xs font-normal text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">{userSchool}</span>}
+        </h2>
+        {!userSchool ? (
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 text-center">
+            <p className="text-sm text-gray-500 mb-3">Complétez votre profil pour voir des recommandations personnalisées.</p>
+            <Link href="/dashboard/profile" className="text-teal text-sm font-semibold hover:underline">Compléter mon profil →</Link>
+          </div>
+        ) : recommendedJobs.length === 0 ? (
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 text-center">
+            <p className="text-sm text-gray-500 mb-3">Toutes les offres de votre école ont déjà été vues !</p>
+            <Link href="/jobboard" className="text-teal text-sm font-semibold hover:underline">Parcourir toutes les offres →</Link>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {recommendedJobs.map(job => (
+              <Link key={job.id} href={`/offers/${job.id}`}
+                className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 hover:shadow-md transition-shadow">
+                <p className="font-semibold text-navy text-sm truncate">{job.title}</p>
+                <p className="text-xs text-gray-500 mt-0.5">{job.company}</p>
+                <div className="flex items-center gap-2 mt-2">
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-navy/5 text-navy">{job.contractType}</span>
+                  {job.location && <span className="text-xs text-gray-400 truncate">{job.location}</span>}
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
       </div>
     </AppShell>
   )

@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { Loader2, CheckCircle } from "lucide-react"
 import { toast } from "sonner"
 import { profileSchema } from "@/lib/validations/user"
+import CvUploadSection from "@/components/dashboard/CvUploadSection"
 
 type ProfileFormValues = {
   name?: string
@@ -62,6 +63,8 @@ interface ProfileFormProps {
     specialization?: string | null
     phone?: string | null
     preferences?: unknown
+    cvUrl?: string | null
+    cvFileName?: string | null
   }
   completionPercent: number
 }
@@ -179,6 +182,13 @@ export default function ProfileForm({ user, completionPercent }: ProfileFormProp
         ) : (
           <p className="text-xs text-gray-400 mt-2">Complétez votre profil pour améliorer vos chances</p>
         )}
+      </div>
+
+      {/* CV upload */}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+        <h3 className="text-base font-semibold text-gray-900 mb-1">CV</h3>
+        <p className="text-sm text-gray-400 mb-5">Uploadez votre CV au format PDF (max 5MB)</p>
+        <CvUploadSection initialCvUrl={user.cvUrl ?? null} initialCvFileName={user.cvFileName ?? null} />
       </div>
 
       {/* Edit form */}

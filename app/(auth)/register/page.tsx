@@ -1,3 +1,4 @@
+import { Suspense } from "react"
 import RegisterForm from "@/components/auth/RegisterForm"
 
 export const metadata = {
@@ -5,5 +6,9 @@ export const metadata = {
 }
 
 export default function RegisterPage() {
-  return <RegisterForm />
+  return (
+    <Suspense fallback={<div className="text-center text-gray-500">Chargement...</div>}>
+      <RegisterForm />
+    </Suspense>
+  )
 }

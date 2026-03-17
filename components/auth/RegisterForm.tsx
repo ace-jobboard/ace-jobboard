@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { Eye, EyeOff, Loader2 } from "lucide-react"
 import { toast } from "sonner"
@@ -16,6 +16,8 @@ const WHITELIST_FRIENDLY =
 
 export default function RegisterForm() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const redirectTo = searchParams.get('redirect') ?? '/jobboard'
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
@@ -62,7 +64,7 @@ export default function RegisterForm() {
       }
 
       toast.success("Compte créé ! Vous pouvez maintenant vous connecter.")
-      router.push("/jobboard")
+      router.push(redirectTo)
     } catch {
       toast.error("Une erreur est survenue")
     } finally {

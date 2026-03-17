@@ -33,6 +33,7 @@ interface Props {
   initialJobs: SerializedJob[]
   initialTotal: number
   defaultSchool?: string
+  hideHero?: boolean
 }
 
 const FILIERES = ["AMOS", "CMH", "EIDM", "ESDAC", "ENAAI"]
@@ -78,6 +79,7 @@ export default function JobboardClient({
   initialJobs,
   initialTotal,
   defaultSchool,
+  hideHero = false,
 }: Props) {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -193,58 +195,60 @@ export default function JobboardClient({
         )}
       </header>
 
-      {/* Hero */}
-      <div className="bg-navy py-16 px-6">
-        <h1 className="text-center text-3xl font-bold text-white mb-3">
-          Trouvez votre alternance ou stage
-        </h1>
-        <p className="text-center text-white/70 text-base mb-8">
-          Des offres sélectionnées pour les étudiants ACE Education
-        </p>
-        <div className="max-w-3xl mx-auto bg-white rounded-xl p-2 flex gap-2 shadow-xl">
-          <div className="relative flex-1">
-            <Search
-              size={16}
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-            />
-            <input
-              className="w-full pl-9 pr-3 py-2.5 text-sm rounded-lg focus:outline-none"
-              placeholder="Rechercher une offre, une entreprise…"
-              value={search}
+      {/* Hero — hidden when school page provides its own hero */}
+      {!hideHero && (
+        <div className="bg-navy py-16 px-6">
+          <h1 className="text-center text-3xl font-bold text-white mb-3">
+            Trouvez votre alternance ou stage
+          </h1>
+          <p className="text-center text-white/70 text-base mb-8">
+            Des offres sélectionnées pour les étudiants ACE Education
+          </p>
+          <div className="max-w-3xl mx-auto bg-white rounded-xl p-2 flex gap-2 shadow-xl">
+            <div className="relative flex-1">
+              <Search
+                size={16}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+              />
+              <input
+                className="w-full pl-9 pr-3 py-2.5 text-sm rounded-lg focus:outline-none"
+                placeholder="Rechercher une offre, une entreprise…"
+                value={search}
+                onChange={(e) => {
+                  setSearch(e.target.value)
+                  setPage(1)
+                  setLoadMore(false)
+                }}
+              />
+            </div>
+            <select
+              className="px-3 py-2 text-sm border-l border-gray-100 rounded-lg focus:outline-none text-gray-600"
+              value={contract}
               onChange={(e) => {
-                setSearch(e.target.value)
+                setContract(e.target.value)
                 setPage(1)
                 setLoadMore(false)
               }}
-            />
+            >
+              <option value="">Tous les contrats</option>
+              <option value="Alternance">Alternance</option>
+              <option value="Stage">Stage</option>
+              <option value="CDI">CDI</option>
+              <option value="CDD">CDD</option>
+            </select>
+            <button
+              onClick={() => {
+                setLoadMore(false)
+                setPage(1)
+                void fetchJobs()
+              }}
+              className="px-5 py-2.5 bg-teal text-white rounded-lg text-sm font-medium hover:bg-teal/90 transition-colors flex-shrink-0"
+            >
+              Rechercher
+            </button>
           </div>
-          <select
-            className="px-3 py-2 text-sm border-l border-gray-100 rounded-lg focus:outline-none text-gray-600"
-            value={contract}
-            onChange={(e) => {
-              setContract(e.target.value)
-              setPage(1)
-              setLoadMore(false)
-            }}
-          >
-            <option value="">Tous les contrats</option>
-            <option value="Alternance">Alternance</option>
-            <option value="Stage">Stage</option>
-            <option value="CDI">CDI</option>
-            <option value="CDD">CDD</option>
-          </select>
-          <button
-            onClick={() => {
-              setLoadMore(false)
-              setPage(1)
-              void fetchJobs()
-            }}
-            className="px-5 py-2.5 bg-teal text-white rounded-lg text-sm font-medium hover:bg-teal/90 transition-colors flex-shrink-0"
-          >
-            Rechercher
-          </button>
         </div>
-      </div>
+      )}
 
       <div className="max-w-5xl mx-auto px-4 py-8">
         {/* Login banner */}

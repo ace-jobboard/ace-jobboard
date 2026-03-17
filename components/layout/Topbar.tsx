@@ -14,6 +14,10 @@ interface SearchResult {
   contractType: string
 }
 
+interface Notification {
+  id: string; type: string; message: string; count: number; href: string; createdAt: string
+}
+
 interface Props {
   title?: string
   userName?: string
@@ -37,6 +41,13 @@ export default function Topbar({ title = "", userName = "Admin" }: Props) {
   const inputRef = useRef<HTMLInputElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Notifications state
+  const [notifications, setNotifications] = useState<Notification[]>([])
+  const [unreadCount, setUnreadCount] = useState(0)
+  const [showNotifications, setShowNotifications] = useState(false)
+  const [notifsRead, setNotifsRead] = useState(false)
+  const notifRef = useRef<HTMLDivElement>(null)
 
   const fetchResults = useCallback(async (q: string) => {
     if (q.length < 2) {
@@ -93,6 +104,28 @@ export default function Topbar({ title = "", userName = "Admin" }: Props) {
       document.removeEventListener("keydown", handleKeyDown)
       document.removeEventListener("mousedown", handleClickOutside)
     }
+  }, [])
+
+  // Fetch notifications on mount
+  useEffect(() => {
+    fetch('/api/user/notifications')
+      .then(r => r.json())
+      .then((data: { notifications: Notification[]; unreadCount: number }) => {
+        setNotifications(data.notifications ?? [])
+        setUnreadCount(data.unreadCount ?? 0)
+      })
+      .catch(() => {})
+  }, [])
+
+  // Click outside to close notifications
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
+        setShowNotifications(false)
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => document.removeEventListener("mousedown", handleClickOutside)
   }, [])
 
   function clearSearch() {
@@ -214,9 +247,49 @@ export default function Topbar({ title = "", userName = "Admin" }: Props) {
           )}
         </div>
 
-        <button className="relative p-2 hover:bg-gray-100 rounded-lg transition-colors" title="Notifications">
-          <Bell size={18} className="text-gray-500" />
-        </button>
+        {/* Notification bell */}
+        <div className="relative" ref={notifRef}>
+          <button
+            onClick={() => { setShowNotifications(v => !v); setNotifsRead(true) }}
+            className="relative p-2 rounded-lg text-gray-400 hover:text-navy hover:bg-gray-100 transition-colors"
+            title="Notifications"
+          >
+            <Bell className="w-5 h-5" />
+            {unreadCount > 0 && !notifsRead && (
+              <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-white text-[9px] font-bold">
+                {unreadCount}
+              </span>
+            )}
+          </button>
+          {showNotifications && (
+            <div className="absolute right-0 top-full mt-2 w-72 bg-white border border-gray-100 rounded-xl shadow-lg z-50">
+              <div className="px-4 py-3 border-b border-gray-50">
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Notifications</p>
+              </div>
+              {notifications.length === 0 ? (
+                <p className="text-sm text-gray-400 text-center py-6">Aucune notification</p>
+              ) : (
+                <div className="divide-y divide-gray-50">
+                  {notifications.map(n => (
+                    <a key={n.id} href={n.href}
+                      className="flex items-start gap-3 px-4 py-3 hover:bg-gray-50 transition-colors">
+                      <span className="mt-0.5 text-lg">{n.type === 'new_jobs' ? '✨' : '⏳'}</span>
+                      <p className="text-sm text-gray-700 flex-1 leading-snug">{n.message}</p>
+                    </a>
+                  ))}
+                  <div className="px-4 py-2">
+                    <button
+                      onClick={() => { setUnreadCount(0); setNotifsRead(true); setShowNotifications(false) }}
+                      className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
+                    >
+                      Tout marquer comme lu
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
 
         <div className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 px-2 py-1 rounded-lg transition-colors">
           <AvatarCircle name={userName} size="sm" />
