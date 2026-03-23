@@ -16,6 +16,7 @@
     "reclassify": "npx tsx scripts/reclassify-jobs.ts",
     "create-admin": "npx tsx scripts/create-admin.ts",
     "create-indeed-tasks": "npx tsx scripts/create-apify-tasks.ts",
+    "create-hellowork-tasks": "npx tsx scripts/create-hellowork-tasks.ts",
     "setup-storage": "npx tsx scripts/setup-storage.ts"
   },
   "prisma": {

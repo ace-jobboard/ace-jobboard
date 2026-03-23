@@ -107,10 +107,54 @@ const INDEED_MAP: SourceFieldMap = {
   salary:          (item) => item.baseSalary ? String(item.baseSalary) : null,
 }
 
+/**
+ * Field map for shahidirfan/HelloWork-Jobs-Scraper (HelloWork actor).
+ * Docs: https://apify.com/shahidirfan/HelloWork-Jobs-Scraper
+ *
+ * Key field shapes from actor output:
+ *   contract_type → comma-separated e.g. "Stage, CDI" or "Alternance, CDI"
+ *   description_html → full HTML (preferred); description_text → plain text fallback
+ *   city / postal_code → compose into location string
+ *   salary_min / salary_max → numbers (EUR/month)
+ *   date_posted → ISO 8601 datetime
+ */
+const HELLOWORK_MAP: SourceFieldMap = {
+  title:    (item) => str(item.title),
+  company:  (item) => str(item.company),
+  location: (item) => {
+    const city       = str(item.city)
+    const postalCode = str(item.postal_code)
+    if (city && postalCode) return `${city}, ${postalCode}`
+    if (city) return city
+    return str(item.location)
+  },
+  description: (item) => first(item, 'description_html', 'description_text', 'description'),
+  url:         (item) => str(item.url),
+  contractTypeRaw: (item) => {
+    // "Stage, CDI" → prefer Alternance > Stage > CDI/CDD > raw first value
+    const parts = str(item.contract_type).split(',').map(s => s.trim()).filter(Boolean)
+    const priority = ['Alternance', 'Stage', 'CDI', 'CDD', 'Freelance']
+    for (const p of priority) {
+      if (parts.some(c => c.toLowerCase().includes(p.toLowerCase()))) return p
+    }
+    return parts[0] ?? ''
+  },
+  salary: (item) => {
+    const min = item.salary_min
+    const max = item.salary_max
+    if (min !== undefined && max !== undefined && min !== null && max !== null) {
+      return `${String(min)}-${String(max)}€/mois`
+    }
+    if (min !== undefined && min !== null) return `${String(min)}€/mois`
+    return str(item.salary) || null
+  },
+}
+
 const SOURCE_MAPS: Record<string, SourceFieldMap> = {
-  wttj:     WTTJ_MAP,
-  linkedin: LINKEDIN_MAP,
-  indeed:   INDEED_MAP,
+  wttj:      WTTJ_MAP,
+  linkedin:  LINKEDIN_MAP,
+  indeed:    INDEED_MAP,
+  hellowork: HELLOWORK_MAP,
 }
 
 function normalizeItem(item: RawItem, source: string): NormalizedFields {

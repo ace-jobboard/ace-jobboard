@@ -107,4 +107,39 @@ export const APIFY_TASKS: TaskConfig[] = [
   { taskId: 'eLCx6n4KgRcIU46v1', school: 'ENAAI', filiere: 'Illustration & Animation', keyword: 'Concept Artist',  contractType: 'both', source: 'indeed' },
   { taskId: '5dq6dihAyXgW5WZqE', school: 'ENAAI', filiere: 'Illustration & Animation', keyword: 'Character Design', contractType: 'both', source: 'indeed' },
   { taskId: '9EETbssC2FjcKkGAp', school: 'ENAAI', filiere: 'Illustration & Animation', keyword: 'Motion Designer',  contractType: 'both', source: 'indeed' },
+
+  // ─── AMOS — Sport Management (HelloWork) ─────────────────────────────────
+  { taskId: 'QLuPeLAwH1X16cEWg', school: 'AMOS', filiere: 'Sport Management', keyword: 'alternance marketing sportif',    contractType: 'both', source: 'hellowork' },
+  { taskId: 'ble1gwamWck5sdfch', school: 'AMOS', filiere: 'Sport Management', keyword: 'alternance communication sport',  contractType: 'both', source: 'hellowork' },
+  { taskId: 'm3pztVpkMkX66u6Iy', school: 'AMOS', filiere: 'Sport Management', keyword: 'alternance événementiel sport',   contractType: 'both', source: 'hellowork' },
+  { taskId: 'UyzjdcpSj2nQbVptP', school: 'AMOS', filiere: 'Sport Management', keyword: 'alternance management sport',     contractType: 'both', source: 'hellowork' },
+  { taskId: 'MlNvdFZM3I9FsXvhh', school: 'AMOS', filiere: 'Sport Management', keyword: 'stage marketing sport',           contractType: 'both', source: 'hellowork' },
+
+  // ─── CMH — Hôtellerie & Luxe (HelloWork) ─────────────────────────────────
+  { taskId: 'tXk6g89vrJqHgehyb', school: 'CMH', filiere: 'Hôtellerie & Luxe', keyword: 'alternance hôtellerie luxe',           contractType: 'both', source: 'hellowork' },
+  { taskId: 'hVq4c7e1ZOKjtXyBr', school: 'CMH', filiere: 'Hôtellerie & Luxe', keyword: 'alternance restauration management',   contractType: 'both', source: 'hellowork' },
+  { taskId: 'zbQjbgaGBjVNxsTBv', school: 'CMH', filiere: 'Hôtellerie & Luxe', keyword: 'alternance revenue management hôtel',  contractType: 'both', source: 'hellowork' },
+  { taskId: 'BcdOeiNbfFRV3qX6x', school: 'CMH', filiere: 'Hôtellerie & Luxe', keyword: 'alternance événementiel luxe',         contractType: 'both', source: 'hellowork' },
+  { taskId: 'u40jInanGKCjaMEws', school: 'CMH', filiere: 'Hôtellerie & Luxe', keyword: 'stage relations clientèle hôtel',      contractType: 'both', source: 'hellowork' },
+
+  // ─── EIDM — Mode & Luxe (HelloWork) ──────────────────────────────────────
+  { taskId: 'F03UcdTDnxxJ6SXra', school: 'EIDM', filiere: 'Mode & Luxe', keyword: 'alternance marketing mode',        contractType: 'both', source: 'hellowork' },
+  { taskId: 'yz77Hxjt2gy2e0NvL', school: 'EIDM', filiere: 'Mode & Luxe', keyword: 'alternance communication luxe',    contractType: 'both', source: 'hellowork' },
+  { taskId: '5wyz1csmTKkuLB18b', school: 'EIDM', filiere: 'Mode & Luxe', keyword: 'alternance chef de projet mode',   contractType: 'both', source: 'hellowork' },
+  { taskId: 'wjPhInvFV7K4cCNP9', school: 'EIDM', filiere: 'Mode & Luxe', keyword: 'alternance digital marketing luxe', contractType: 'both', source: 'hellowork' },
+  { taskId: 'zrwqGoiP8xdUyaHB8', school: 'EIDM', filiere: 'Mode & Luxe', keyword: 'stage merchandising mode',          contractType: 'both', source: 'hellowork' },
+
+  // ─── ESDAC — Design (HelloWork) ───────────────────────────────────────────
+  { taskId: 'lUwATsk1fvHsZMYpn', school: 'ESDAC', filiere: 'Design', keyword: 'alternance graphiste',           contractType: 'both', source: 'hellowork' },
+  { taskId: 'xjXwXMttIoPVNZbdM', school: 'ESDAC', filiere: 'Design', keyword: 'alternance designer graphique',  contractType: 'both', source: 'hellowork' },
+  { taskId: 'rXnzKWkk1SJEg7Axv', school: 'ESDAC', filiere: 'Design', keyword: 'alternance direction artistique', contractType: 'both', source: 'hellowork' },
+  { taskId: 'x2FGAkeEa81cILhfX', school: 'ESDAC', filiere: 'Design', keyword: 'alternance UX design',           contractType: 'both', source: 'hellowork' },
+  { taskId: 'tnYcaR3CUhmOr2Lie', school: 'ESDAC', filiere: 'Design', keyword: 'alternance motion design',       contractType: 'both', source: 'hellowork' },
+
+  // ─── ENAAI — Illustration & Animation (HelloWork) ────────────────────────
+  { taskId: 'fXXXl9kN77XYkybzL', school: 'ENAAI', filiere: 'Illustration & Animation', keyword: 'alternance illustrateur',       contractType: 'both', source: 'hellowork' },
+  { taskId: 'aGESxq9eEDdFH4V12', school: 'ENAAI', filiere: 'Illustration & Animation', keyword: 'alternance animateur 2D 3D',    contractType: 'both', source: 'hellowork' },
+  { taskId: 'eWKPjHGhiBy7hUnk1', school: 'ENAAI', filiere: 'Illustration & Animation', keyword: 'alternance concept artist',     contractType: 'both', source: 'hellowork' },
+  { taskId: 'EexdezoukCsi1a2TW', school: 'ENAAI', filiere: 'Illustration & Animation', keyword: 'alternance character design',   contractType: 'both', source: 'hellowork' },
+  { taskId: 'w5i1mZLjfHbuRn7VX', school: 'ENAAI', filiere: 'Illustration & Animation', keyword: 'alternance motion designer',    contractType: 'both', source: 'hellowork' },
 ]

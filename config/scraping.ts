@@ -39,6 +39,10 @@ export const COMPETITOR_COMPANIES: string[] = [
   'stand up formation', 'efrei', 'epitech', 'supinfo',
   'ecole de', 'école de', 'cfa ', 'institut de formation',
   'centre de formation',
+  // Additional competitor training orgs
+  'mydigitalschool', 'studi', 'mon campus', 'openclassrooms',
+  'sup de création', 'ifocop', 'afpa', 'greta', 'cfa académie',
+  'esicad', 'efj', 'isefac', 'institut supérieur', 'école supérieure',
 ]
 
 export const COMPETITOR_PHRASES: string[] = [
@@ -50,6 +54,12 @@ export const COMPETITOR_PHRASES: string[] = [
   'recrutement étudiant', 'bachelor en alternance chez nous',
   'en partenariat avec', 'notre partenaire académique',
   'coût de formation',
+  // Additional competitor recruitment phrases
+  'en alternance avec notre école',
+  "préparer l'une de nos formations",
+  'optez pour l\'alternance nouvelle génération',
+  'nos formations diplômantes',
+  "contrat d'apprentissage pour préparer",
 ]
 
 export type SchoolKey = "AMOS" | "CMH" | "EIDM" | "ESDAC" | "ENAAI"
