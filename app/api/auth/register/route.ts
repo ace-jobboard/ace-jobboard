@@ -17,6 +17,7 @@ export async function POST(request: Request) {
     }
 
     const { name, email, password } = validated.data
+    const formSchool = (body as { school?: string }).school ?? null
 
     const existingUser = await prisma.user.findUnique({ where: { email } })
     if (existingUser) {
@@ -34,7 +35,9 @@ export async function POST(request: Request) {
       hubspotContactId?: string
     } = {}
 
-    if (!isAdminEmail(email)) {
+    const whitelistDisabled = process.env.DISABLE_HUBSPOT_WHITELIST === 'true'
+
+    if (!isAdminEmail(email) && !whitelistDisabled) {
       let hsData = null
       try {
         hsData = await lookupStudentByEmail(email)
@@ -79,14 +82,16 @@ export async function POST(request: Request) {
 
     const hashedPassword = await bcrypt.hash(password, 12)
 
+    // School priority: HubSpot → form selection (when whitelist disabled) → null
+    const school = hubspotData.school ?? (whitelistDisabled && formSchool ? formSchool : undefined)
+
     const user = await prisma.user.create({
       data: {
         name,
         email,
         password:      hashedPassword,
         emailVerified: new Date(),
-        // HubSpot-enriched fields (only set if present)
-        ...(hubspotData.school         && { school:         hubspotData.school }),
+        ...(school                     && { school }),
         ...(hubspotData.phone          && { phone:          hubspotData.phone }),
         ...(hubspotData.specialization && { specialization: hubspotData.specialization }),
       },

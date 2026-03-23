@@ -64,6 +64,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       const dbRole = await prisma.user.findUnique({ where: { email }, select: { role: true } })
       if (dbRole?.role === 'ADMIN') return true
 
+      // Testing mode: bypass HubSpot whitelist entirely
+      if (process.env.DISABLE_HUBSPOT_WHITELIST === 'true') {
+        console.log('[auth] HubSpot whitelist disabled — allowing sign-in for:', email)
+        return true
+      }
+
       try {
         const whitelist = await prisma.studentWhitelist.findUnique({ where: { email } })
 

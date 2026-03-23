@@ -4,7 +4,7 @@ import { prisma } from '@/lib/db'
 import { auth } from '@/auth'
 import JobCard from '@/components/JobCard'
 import HomeSearchBar from '@/components/HomeSearchBar'
-import UserNav from '@/components/auth/UserNav'
+import PublicNavbar from '@/components/layout/PublicNavbar'
 import { Button } from '@/components/ui/button'
 import { Job } from '@/types/job'
 
@@ -70,30 +70,17 @@ export default async function HomePage() {
   const recentSerialized = recentJobs.map(serializeJob)
   const schoolJobsSerialized = schoolJobs.map(arr => arr.map(serializeJob))
 
+  const userName   = session?.user?.name ?? null
+  const userSchool = (session?.user as { school?: string | null } | undefined)?.school ?? null
+
   return (
     <div className="min-h-screen bg-light">
-      {/* Navbar */}
-      <header className="bg-navy text-white">
-        <div className="container mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Image src="/ace-logo.png" alt="ACE Education" width={140} height={46} className="h-10 w-auto object-contain" priority />
-            <div className="hidden md:block h-6 border-l border-white/20" />
-            <span className="hidden md:block text-sm font-semibold text-white/80">Job Board</span>
-          </div>
-          <div className="flex items-center gap-3">
-            {session?.user ? (
-              <UserNav user={session.user} />
-            ) : (
-              <>
-                <Link href="/login" className="text-sm text-white/70 hover:text-white transition-colors">Connexion</Link>
-                <Button asChild size="sm" className="bg-teal hover:bg-teal-hover text-white font-semibold">
-                  <Link href="/register">Créer un compte</Link>
-                </Button>
-              </>
-            )}
-          </div>
-        </div>
-      </header>
+      <PublicNavbar
+        isLoggedIn={!!session?.user}
+        userName={userName}
+        userSchool={userSchool}
+        currentPath="/"
+      />
 
       {/* Hero */}
       <section className="bg-navy text-white py-20">
@@ -117,6 +104,13 @@ export default async function HomePage() {
               </Link>
             ))}
           </div>
+
+          <p className="text-white/50 text-sm mt-4">
+            Vous êtes étudiant ACE ?{' '}
+            <Link href="/register" className="text-white underline hover:text-white/80 transition-colors">
+              Créez votre compte gratuitement →
+            </Link>
+          </p>
         </div>
       </section>
 

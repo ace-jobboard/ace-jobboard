@@ -1,12 +1,12 @@
 // Public offer detail — no auth required
 import { notFound } from 'next/navigation'
-import Image from 'next/image'
 import Link from 'next/link'
 import { prisma } from '@/lib/db'
 import { auth } from '@/auth'
 import { sanitizeHtml } from '@/lib/sanitize'
 import { Button } from '@/components/ui/button'
 import ApplyButton from '@/components/jobboard/ApplyButton'
+import PublicNavbar from '@/components/layout/PublicNavbar'
 import { MapPin, Briefcase, Building2, ExternalLink, ArrowLeft } from 'lucide-react'
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
@@ -39,15 +39,16 @@ export default async function PublicOfferPage({ params }: { params: Promise<{ id
     }
   }
 
+  const userSchool = (session?.user as { school?: string | null } | undefined)?.school ?? null
+
   return (
     <div className="min-h-screen bg-light">
-      {/* Simple navbar */}
-      <header className="bg-navy text-white">
-        <div className="container mx-auto px-4 py-3 flex items-center justify-between">
-          <Image src="/ace-logo.png" alt="ACE Education" width={120} height={40} className="h-9 w-auto object-contain" />
-          <Link href="/login" className="text-sm text-white/70 hover:text-white transition-colors">Se connecter →</Link>
-        </div>
-      </header>
+      <PublicNavbar
+        isLoggedIn={!!session?.user}
+        userName={session?.user?.name}
+        userSchool={userSchool}
+        currentPath={`/jobboard/${id}`}
+      />
 
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         {/* Back */}

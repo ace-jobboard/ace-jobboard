@@ -1,11 +1,14 @@
 import { auth } from "@/auth"
 import { prisma } from "@/lib/db"
 import JobboardClient from "./JobboardClient"
+import PublicNavbar from "@/components/layout/PublicNavbar"
 
 export default async function JobBoardPage() {
   const session = await auth()
   const isLoggedIn = !!session?.user
+  const userName   = session?.user?.name ?? null
   const userSchool = (session?.user as { school?: string | null } | undefined)?.school ?? null
+  const isNewUser  = isLoggedIn && !userSchool
 
   const [initialJobsRaw, initialTotal] = await Promise.all([
     prisma.job.findMany({
@@ -41,7 +44,6 @@ export default async function JobBoardPage() {
     }),
   ])
 
-  // Serialize dates for client
   const initialJobs = initialJobsRaw.map((j) => ({
     ...j,
     createdAt: j.createdAt.toISOString(),
@@ -49,11 +51,20 @@ export default async function JobBoardPage() {
   }))
 
   return (
-    <JobboardClient
-      isLoggedIn={isLoggedIn}
-      userSchool={userSchool}
-      initialJobs={initialJobs}
-      initialTotal={initialTotal}
-    />
+    <>
+      <PublicNavbar
+        isLoggedIn={isLoggedIn}
+        userName={userName}
+        userSchool={userSchool}
+        currentPath="/jobboard"
+      />
+      <JobboardClient
+        isLoggedIn={isLoggedIn}
+        userSchool={userSchool}
+        initialJobs={initialJobs}
+        initialTotal={initialTotal}
+        isNewUser={isNewUser}
+      />
+    </>
   )
 }

@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback, useRef } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
-import Image from "next/image"
 import JobCard from "@/components/JobCard"
 import EmptyState from "@/components/ui/empty-state"
 import { Search, Loader2 } from "lucide-react"
@@ -34,6 +33,7 @@ interface Props {
   initialTotal: number
   defaultSchool?: string
   hideHero?: boolean
+  isNewUser?: boolean
 }
 
 const FILIERES = ["AMOS", "CMH", "EIDM", "ESDAC", "ENAAI"]
@@ -80,6 +80,7 @@ export default function JobboardClient({
   initialTotal,
   defaultSchool,
   hideHero = false,
+  isNewUser = false,
 }: Props) {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -99,6 +100,7 @@ export default function JobboardClient({
   const [total, setTotal] = useState(initialTotal)
   const [loading, setLoading] = useState(false)
   const [sortBy, setSortBy] = useState(searchParams.get("sort") ?? "createdAt")
+  const [showWelcome, setShowWelcome] = useState(isNewUser)
 
   // Debounce search
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -166,35 +168,6 @@ export default function JobboardClient({
 
   return (
     <div className="min-h-screen bg-light">
-      {/* Navbar */}
-      <header className="bg-navy text-white py-3 px-6 flex items-center justify-between">
-        <Link href="/">
-          <Image
-            src="/ace-logo.png"
-            alt="ACE"
-            width={120}
-            height={40}
-            className="h-9 w-auto"
-            priority
-          />
-        </Link>
-        {isLoggedIn ? (
-          <Link
-            href="/dashboard"
-            className="text-sm text-gray-300 hover:text-white transition-colors"
-          >
-            Mon espace →
-          </Link>
-        ) : (
-          <Link
-            href="/login"
-            className="text-sm text-gray-300 hover:text-white transition-colors"
-          >
-            Se connecter →
-          </Link>
-        )}
-      </header>
-
       {/* Hero — hidden when school page provides its own hero */}
       {!hideHero && (
         <div className="bg-navy py-16 px-6">
@@ -251,6 +224,28 @@ export default function JobboardClient({
       )}
 
       <div className="max-w-5xl mx-auto px-4 py-8">
+        {/* Welcome banner for new users */}
+        {showWelcome && (
+          <div className="mb-4 p-4 bg-teal/10 border border-teal/20 rounded-xl flex items-start justify-between gap-3">
+            <div>
+              <p className="text-sm font-semibold text-teal">Bienvenue sur la plateforme ACE ! 👋</p>
+              <p className="text-sm text-gray-600 mt-0.5">
+                Complétez votre profil pour personnaliser vos offres.{' '}
+                <Link href="/dashboard/profile" className="text-teal underline hover:text-teal-hover transition-colors">
+                  Compléter mon profil →
+                </Link>
+              </p>
+            </div>
+            <button
+              onClick={() => setShowWelcome(false)}
+              className="text-gray-400 hover:text-gray-600 transition-colors shrink-0 text-base leading-none"
+              aria-label="Fermer"
+            >
+              ✕
+            </button>
+          </div>
+        )}
+
         {/* Login banner */}
         {!isLoggedIn && (
           <div className="mb-6 flex items-center gap-3 px-4 py-3 bg-teal/10 border border-teal/20 rounded-lg text-sm text-teal">

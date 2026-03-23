@@ -79,6 +79,12 @@ export default function RegisterForm() {
         <p className="text-sm text-gray-500 mt-1">Rejoignez la communauté ACE Education</p>
       </div>
 
+      {process.env.NEXT_PUBLIC_TEST_MODE === 'true' && (
+        <div className="mb-4 px-4 py-2 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-700">
+          🧪 Mode test activé — toute adresse email est acceptée
+        </div>
+      )}
+
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         {/* École */}
         <div className="space-y-1">
@@ -95,6 +101,7 @@ export default function RegisterForm() {
             {SCHOOLS.map((s) => (
               <option key={s} value={s}>{s}</option>
             ))}
+            <option value="">Je ne sais pas</option>
           </select>
           {schoolError && (
             <p className="text-xs text-red-600">{schoolError}</p>

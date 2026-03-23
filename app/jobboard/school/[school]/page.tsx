@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db'
 import JobboardClient from '@/app/jobboard/JobboardClient'
 import { auth } from '@/auth'
 import Link from 'next/link'
+import PublicNavbar from '@/components/layout/PublicNavbar'
 
 const VALID_SCHOOLS: Record<string, string> = {
   AMOS:  'Sport Management',
@@ -84,8 +85,17 @@ export default async function SchoolJobboardPage({ params }: { params: Promise<{
     updatedAt: j.updatedAt.toISOString(),
   }))
 
+  const userName = session?.user?.name ?? null
+
   return (
     <div>
+      <PublicNavbar
+        isLoggedIn={isLoggedIn}
+        userName={userName}
+        userSchool={userSchool}
+        currentPath={`/jobboard/school/${schoolKey}`}
+      />
+
       {/* School hero */}
       <div className={`${school_conf.accentClass} text-white py-12`}>
         <div className="container mx-auto px-4">

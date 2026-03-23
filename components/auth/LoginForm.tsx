@@ -85,6 +85,12 @@ export default function LoginForm() {
         <p className="text-sm text-gray-500 mt-1">Connectez-vous à votre espace étudiant ACE</p>
       </div>
 
+      {process.env.NEXT_PUBLIC_TEST_MODE === 'true' && (
+        <div className="mb-4 px-4 py-2 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-700">
+          🧪 Mode test activé — toute adresse email est acceptée
+        </div>
+      )}
+
       {/* Microsoft SSO */}
       <button
         type="button"
