@@ -2,6 +2,9 @@ import { auth } from './auth'
 import { NextResponse } from 'next/server'
 
 export default auth((req) => {
+  // Beta open access — bypass all route protection
+  if (process.env.BETA_OPEN_ACCESS === 'true') return NextResponse.next()
+
   const { nextUrl } = req
   const session = req.auth
   const isLoggedIn = !!session?.user
