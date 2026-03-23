@@ -91,8 +91,8 @@ export default async function AdminPage() {
                     const durationSec = run.completedAt
                       ? Math.round((run.completedAt.getTime() - run.startedAt.getTime()) / 1000)
                       : null
-                    const statusColor = run.status === 'success' ? 'bg-green-100 text-green-700'
-                      : run.status === 'partial' ? 'bg-amber-100 text-amber-700'
+                    const statusColor = run.status === 'SUCCEEDED' ? 'bg-green-100 text-green-700'
+                      : run.status === 'RUNNING' ? 'bg-amber-100 text-amber-700'
                       : 'bg-red-100 text-red-700'
                     return (
                       <tr key={run.id} className="hover:bg-gray-50/50">

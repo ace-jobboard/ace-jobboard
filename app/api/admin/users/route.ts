@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/auth"
 import { prisma } from "@/lib/db"
-import { Prisma } from "@prisma/client"
+import { Prisma, UserRole } from "@prisma/client"
 
 export async function GET(request: NextRequest) {
   const session = await auth()
@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
         { email: { contains: q, mode: "insensitive" } },
       ],
     }),
-    ...(role   && { role }),
+    ...(role   && { role: role as UserRole }),
     ...(school && { school }),
   }
 

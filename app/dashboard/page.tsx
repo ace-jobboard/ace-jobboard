@@ -7,6 +7,7 @@ import StatusBadge from "@/components/ui/status-badge"
 import { Briefcase, CheckCircle, Clock, RefreshCw, Globe } from "lucide-react"
 import DashboardCharts from "@/components/dashboard/DashboardCharts"
 import { APIFY_TASKS } from "@/config/tasks"
+import { SCHOOL_FILIERE } from "@/config/scraping"
 import Link from "next/link"
 
 type RecommendedJob = {
@@ -65,11 +66,12 @@ export default async function DashboardPage() {
       ...savedJobIds.map(s => s.jobId),
       ...applicationJobIds.map(a => a.jobId),
     ]
+    const filiere = SCHOOL_FILIERE[userSchool as keyof typeof SCHOOL_FILIERE] ?? userSchool
     recommendedJobs = await prisma.job.findMany({
       where: {
         isActive: true,
         isApproved: true,
-        filiere: userSchool,
+        filiere,
         id: excludeIds.length > 0 ? { notIn: excludeIds } : undefined,
       },
       orderBy: { createdAt: 'desc' },
@@ -95,8 +97,8 @@ export default async function DashboardPage() {
   }, {})
 
   function statusVariant(status: string): "green" | "orange" | "red" {
-    if (status === "success") return "green"
-    if (status === "partial") return "orange"
+    if (status === "SUCCEEDED") return "green"
+    if (status === "RUNNING")   return "orange"
     return "red"
   }
 

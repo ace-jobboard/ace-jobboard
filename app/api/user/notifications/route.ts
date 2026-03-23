@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { auth } from '@/auth'
 import { prisma } from '@/lib/db'
+import { SCHOOL_FILIERE } from '@/config/scraping'
 
 export async function GET() {
   const session = await auth()
@@ -20,9 +21,11 @@ export async function GET() {
   const notifications: { id: string; type: string; message: string; count: number; href: string; createdAt: string }[] = []
 
   // New jobs matching user's school (last 24h)
-  if (school) {
+  // school stores the code (AMOS, CMH…); filiere stores the full name
+  const filiere = school ? (SCHOOL_FILIERE[school as keyof typeof SCHOOL_FILIERE] ?? school) : null
+  if (filiere) {
     const newJobsCount = await prisma.job.count({
-      where: { isActive: true, isApproved: true, filiere: school, createdAt: { gte: oneDayAgo } },
+      where: { isActive: true, isApproved: true, filiere, createdAt: { gte: oneDayAgo } },
     })
     if (newJobsCount > 0) {
       notifications.push({
@@ -30,7 +33,7 @@ export async function GET() {
         type: 'new_jobs',
         message: `${newJobsCount} nouvelle${newJobsCount > 1 ? 's' : ''} offre${newJobsCount > 1 ? 's' : ''} pour ${school}`,
         count: newJobsCount,
-        href: `/jobboard?school=${encodeURIComponent(school)}`,
+        href: `/jobboard?school=${encodeURIComponent(school!)}`,
         createdAt: new Date().toISOString(),
       })
     }

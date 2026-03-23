@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { auth } from "@/auth"
 import { prisma } from "@/lib/db"
 import { fetchAllTasks } from "@/lib/apify/fetch-tasks"
+import { ScrapeStatus } from "@prisma/client"
 
 export async function POST() {
   const session = await auth()
@@ -27,7 +28,7 @@ export async function POST() {
         error:       result.errors.length > 0 ? result.errors.join("; ") : null,
         source:      "all",
         school:      "all",
-        status:      result.errors.length > 0 ? "partial" : "success",
+        status:      result.errors.length > 0 ? ScrapeStatus.FAILED : ScrapeStatus.SUCCEEDED,
       },
     })
 
