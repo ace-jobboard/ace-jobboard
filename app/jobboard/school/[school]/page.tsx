@@ -93,7 +93,6 @@ export default async function SchoolJobboardPage({ params }: { params: Promise<{
         isLoggedIn={isLoggedIn}
         userName={userName}
         userSchool={userSchool}
-        currentPath={`/jobboard/school/${schoolKey}`}
       />
 
       {/* School hero */}

@@ -47,7 +47,6 @@ export default async function PublicOfferPage({ params }: { params: Promise<{ id
         isLoggedIn={!!session?.user}
         userName={session?.user?.name}
         userSchool={userSchool}
-        currentPath={`/jobboard/${id}`}
       />
 
       <div className="container mx-auto px-4 py-8 max-w-4xl">
