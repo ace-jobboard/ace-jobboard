@@ -34,7 +34,8 @@ export const COMPETITOR_DESCRIPTION_PHRASES = [
 
 // Merged, deduplicated competitor lists (used by fetch-tasks.ts)
 export const COMPETITOR_COMPANIES: string[] = [
-  'ifae', 'iscod', 'galileo', 'esg sport', 'win sport school',
+  'ifae', 'iscod', 'galileo', 'esg sport', 'win sport school', 'win sport',
+  'e2se',
   'nuevo cfa', 'pigier', 'alticome', 'prisma formations',
   'stand up formation', 'efrei', 'epitech', 'supinfo',
   'ecole de', 'école de', 'cfa ', 'institut de formation',
