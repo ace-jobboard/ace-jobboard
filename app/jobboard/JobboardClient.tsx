@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import JobCard from "@/components/JobCard"
 import EmptyState from "@/components/ui/empty-state"
-import { Search, Loader2 } from "lucide-react"
+import { Search, Loader2, MapPin, X } from "lucide-react"
 import { Job } from "@/types/job"
 
 interface SerializedJob {
@@ -87,6 +87,7 @@ export default function JobboardClient({
 
   const [search, setSearch] = useState(searchParams.get("q") ?? "")
   const [contract, setContract] = useState(searchParams.get("contract") ?? "")
+  const [location, setLocation] = useState(searchParams.get("location") ?? "")
   const [school, setSchool] = useState(() => {
     const paramSchool = searchParams.get("school")
     if (paramSchool) return paramSchool
@@ -122,10 +123,11 @@ export default function JobboardClient({
     if (debouncedSearch) params.set("q", debouncedSearch)
     if (contract) params.set("contract", contract)
     if (school) params.set("school", school)
+    if (location) params.set("location", location)
     if (page > 1) params.set("page", String(page))
     if (sortBy !== "createdAt") params.set("sort", sortBy)
     router.replace(`/jobboard?${params.toString()}`, { scroll: false })
-  }, [debouncedSearch, contract, school, page, sortBy, router])
+  }, [debouncedSearch, contract, school, location, page, sortBy, router])
 
   const fetchJobs = useCallback(async () => {
     setLoading(true)
@@ -134,6 +136,7 @@ export default function JobboardClient({
       if (debouncedSearch) params.set("q", debouncedSearch)
       if (contract) params.set("contract", contract)
       if (school) params.set("school", school)
+      if (location) params.set("location", location)
       if (sortBy !== "createdAt") params.set("sort", sortBy)
 
       const res = await fetch(`/api/jobs?${params}`)
@@ -151,7 +154,7 @@ export default function JobboardClient({
     } finally {
       setLoading(false)
     }
-  }, [page, debouncedSearch, contract, school, sortBy, loadMore])
+  }, [page, debouncedSearch, contract, school, location, sortBy, loadMore])
 
   useEffect(() => {
     if (isFirstLoad.current) {
@@ -265,6 +268,25 @@ export default function JobboardClient({
           {pill(FILIERES, school, setSchool, setPage, setLoadMore)}
           <span className="text-xs text-gray-400 self-center ml-3 mr-1">Contrat :</span>
           {pill(CONTRACTS, contract, setContract, setPage, setLoadMore)}
+          <div className="flex items-center gap-1.5 ml-3">
+            <MapPin size={14} className="text-gray-400 flex-shrink-0" />
+            <input
+              type="text"
+              value={location}
+              onChange={e => { setLocation(e.target.value); setPage(1); setLoadMore(false) }}
+              placeholder="Ville ou région..."
+              className="text-xs border border-gray-200 rounded-lg px-2.5 py-1 focus:outline-none focus:ring-2 focus:ring-teal/30 focus:border-teal w-40 transition-all"
+            />
+            {location && (
+              <button
+                onClick={() => { setLocation(''); setPage(1); setLoadMore(false) }}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+                aria-label="Effacer la localisation"
+              >
+                <X size={12} />
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Results count + sort */}

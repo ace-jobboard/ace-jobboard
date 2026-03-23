@@ -201,6 +201,47 @@ function normalizeItem(item: RawItem, source: string): NormalizedFields {
 // Filtering
 // ---------------------------------------------------------------------------
 
+const SCHOOL_KEYWORDS: Record<string, string[]> = {
+  'Sport Management': [
+    'sport', 'sportif', 'sportive', 'fitness', 'football', 'rugby',
+    'basketball', 'tennis', 'natation', 'athlétisme', 'événementiel sport',
+    'marketing sport', 'communication sport', 'management sport',
+    'fédération', 'club sportif', 'ligue',
+  ],
+  'Hôtellerie & Luxe': [
+    'hôtel', 'hotel', 'hôtellerie', 'restauration', 'restaurant',
+    'luxe', 'luxury', 'réception', 'concierge', 'room service',
+    'food and beverage', 'f&b', 'hébergement', 'resort', 'palace',
+    'gastronomie', 'sommelier', 'événementiel', 'traiteur',
+  ],
+  'Mode & Luxe': [
+    'mode', 'fashion', 'luxe', 'luxury', 'textile', 'vêtement',
+    'stylisme', 'collection', 'retail', 'boutique', 'maroquinerie',
+    'joaillerie', 'parfum', 'cosmétique', 'beauté', 'merchandising',
+    'showroom', 'prêt-à-porter', 'haute couture',
+  ],
+  'Design': [
+    'design', 'graphiste', 'graphique', 'ux', 'ui', 'webdesign',
+    'web design', 'motion', 'directeur artistique', 'direction artistique',
+    'identité visuelle', 'charte graphique', 'print', 'packaging',
+    'illustration', 'typographie', 'adobe', 'photoshop', 'illustrator',
+    'indesign', 'figma', 'sketch', 'créatif', 'artistique',
+  ],
+  'Illustration & Animation': [
+    'illustration', 'illustrateur', 'animation', 'animateur', '2d', '3d',
+    'motion design', 'motion designer', 'concept art', 'character design',
+    'jeux vidéo', 'game', 'manga', 'bd', 'bande dessinée', 'storyboard',
+    'after effects', 'cinema 4d', 'blender', 'maya', 'unity', 'unreal',
+    'dessin', 'esquisse', 'modélisation',
+  ],
+}
+
+function isRelevantForSchool(title: string, description: string, filiere: string): boolean {
+  const keywords = SCHOOL_KEYWORDS[filiere]
+  if (!keywords) return true
+  const text = `${title} ${description}`.toLowerCase()
+  return keywords.some(kw => text.includes(kw.toLowerCase()))
+}
 
 function isCompetitor(company: string, description: string): boolean {
   const companyLower = (company || '').toLowerCase()
@@ -306,6 +347,7 @@ export async function fetchAllTasks(): Promise<{
 
         if (!title || !url || !company) { filtered++; continue }
         if (isCompetitor(company, description)) { filtered++; continue }
+        if (!isRelevantForSchool(title, description, task.filiere)) { filtered++; continue }
 
         const filiere = classifyFiliere(title, description, task.filiere)
 

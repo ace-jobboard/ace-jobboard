@@ -2,7 +2,7 @@ import Link from "next/link"
 import { Job } from "@/types/job"
 import SaveButton from "@/components/ui/save-button"
 import AvatarCircle from "@/components/ui/avatar-circle"
-import { relativeTime } from "@/lib/utils"
+import { relativeTime, stripHtml } from "@/lib/utils"
 
 interface JobCardProps {
   job: Job
@@ -108,9 +108,14 @@ export default function JobCard({
         </div>
 
         {/* Description */}
-        <p className="text-xs text-gray-600 line-clamp-3 leading-relaxed flex-1">
-          {job.description}
-        </p>
+        {(() => {
+          const preview = stripHtml(job.description ?? '').slice(0, 150)
+          return preview ? (
+            <p className="text-xs text-gray-600 line-clamp-3 leading-relaxed flex-1">
+              {preview}…
+            </p>
+          ) : null
+        })()}
       </div>
 
       {/* Footer */}

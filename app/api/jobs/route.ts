@@ -25,6 +25,7 @@ export async function GET(request: Request) {
     const school       = searchParams.get("school")   // AMOS, CMH, etc. OR filiere string
     const niveau       = searchParams.get("niveau")
     const region       = searchParams.get("region")
+    const location     = searchParams.get("location")
     const contractType = searchParams.get("contract") ?? searchParams.get("contractType")
     const source       = searchParams.get("source")
     const search       = searchParams.get("q") ?? searchParams.get("search")
@@ -47,7 +48,13 @@ export async function GET(request: Request) {
       NOT: [{ source: 'adzuna' }, { filiere: '_dump' }],
       ...(filiereFromSchool && { filiere: filiereFromSchool }),
       ...(niveau       && { niveau }),
-      ...(region       && { region: { contains: region, mode: 'insensitive' } }),
+      ...(region       && { region:   { contains: region,   mode: 'insensitive' } }),
+      ...(location && {
+        OR: [
+          { location: { contains: location, mode: 'insensitive' } },
+          { region:   { contains: location, mode: 'insensitive' } },
+        ],
+      }),
       ...(contractType && { contractType }),
       ...(source       && { source }),
       ...(approvedStr !== null && approvedStr !== "" && {
