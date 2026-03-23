@@ -77,34 +77,61 @@ const LINKEDIN_MAP: SourceFieldMap = {
 }
 
 /**
- * Field map for valig/indeed-jobs-scraper (Indeed Jobs actor).
- * Docs: https://apify.com/valig/indeed-jobs-scraper
+ * Field map for misceres/indeed-scraper (Indeed Jobs actor).
+ * Docs: https://apify.com/misceres/indeed-scraper
  *
- * Key field shapes from actor output:
- *   employer   → { name: string }
- *   location   → { city?: string; formatted?: string; label?: string }
- *   jobTypes   → string[] (e.g. ["Alternance"], ["Stage"])
- *   jobUrl     → canonical Indeed job page URL (preferred over `url`)
- *   baseSalary → string | null (frequently absent)
+ * Confirmed output field shapes from live test:
+ *   employer   → { name: string; logoUrl?: string }
+ *   location   → { city?: string; postalCode?: string }
+ *   jobTypes   → object e.g. { "VDTG7": "Stage" } (values are contract type strings)
+ *   baseSalary → { min?: number; max?: number; unitOfWork?: string; currencyCode?: string }
+ *   description → { html?: string; text?: string }
+ *   url        → canonical Indeed viewjob URL (primary)
+ *   jobUrl     → alternative/apply URL (fallback)
  */
 const INDEED_MAP: SourceFieldMap = {
-  title:           (item) => str(item.title),
-  company:         (item) => {
+  title: (item) => str(item.title),
+
+  company: (item) => {
     const emp = item.employer as { name?: string } | null | undefined
     return str(emp?.name)
   },
-  location:        (item) => {
-    const loc = item.location as { city?: string; formatted?: string; label?: string } | null | undefined
-    return str(loc?.city) || str(loc?.formatted) || str(loc?.label)
+
+  location: (item) => {
+    const loc = item.location as { city?: string; postalCode?: string } | null | undefined
+    if (!loc) return ''
+    const parts = [loc.city, loc.postalCode].filter(Boolean)
+    return parts.join(', ')
   },
-  description:     (item) => str(item.description),
-  url:             (item) => first(item, 'jobUrl', 'url'),
+
+  description: (item) => {
+    const desc = item.description as { html?: string; text?: string } | null | undefined
+    return str(desc?.html ?? desc?.text)
+  },
+
+  url: (item) => first(item, 'url', 'jobUrl'),
+
   contractTypeRaw: (item) => {
-    const types = item.jobTypes
-    if (Array.isArray(types) && types.length > 0) return types.map(String).join(', ')
-    return ''
+    // jobTypes is an object like { "VDTG7": "Stage" } — extract first priority-matched value
+    const jobTypes = item.jobTypes as Record<string, string> | null | undefined
+    if (!jobTypes || typeof jobTypes !== 'object' || Array.isArray(jobTypes)) return ''
+    const values = Object.values(jobTypes)
+    const priority = ['Alternance', 'Stage', 'CDI', 'CDD', 'Freelance', 'Interim']
+    for (const p of priority) {
+      if (values.some(v => v.toLowerCase().includes(p.toLowerCase()))) return p
+    }
+    return values[0] ?? ''
   },
-  salary:          (item) => item.baseSalary ? String(item.baseSalary) : null,
+
+  salary: (item) => {
+    const s = item.baseSalary as { min?: number; max?: number; unitOfWork?: string; currencyCode?: string } | null | undefined
+    if (!s) return null
+    const parts = ([s.min, s.max] as Array<number | undefined>).filter((v): v is number => v != null && v !== 0)
+    if (parts.length === 0) return null
+    const currency = s.currencyCode ?? 'EUR'
+    const unit = s.unitOfWork ?? 'MONTH'
+    return `${parts.join(' - ')} ${currency} / ${unit}`
+  },
 }
 
 /**
