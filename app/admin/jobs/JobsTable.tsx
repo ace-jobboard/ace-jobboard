@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useMemo } from "react"
+import { Trash2 } from "lucide-react"
 
 interface Job {
   id: string
@@ -30,6 +31,7 @@ export default function JobsTable({ initialJobs }: { initialJobs: Job[] }) {
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "hidden">("all")
   const [page, setPage] = useState(1)
   const [toggling, setToggling] = useState<string | null>(null)
+  const [deleting, setDeleting] = useState<string | null>(null)
 
   const filtered = useMemo(() => {
     return jobs.filter((j) => {
@@ -45,6 +47,21 @@ export default function JobsTable({ initialJobs }: { initialJobs: Job[] }) {
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
 
   const filieres = Array.from(new Set(jobs.map((j) => j.filiere))).sort()
+
+  async function deleteJob(id: string) {
+    if (!confirm("Supprimer définitivement cette offre ?")) return
+    setDeleting(id)
+    try {
+      const res = await fetch(`/api/admin/jobs/${id}`, { method: "DELETE" })
+      if (res.ok) {
+        setJobs((prev) => prev.filter((j) => j.id !== id))
+      } else {
+        alert("Erreur lors de la suppression")
+      }
+    } finally {
+      setDeleting(null)
+    }
+  }
 
   async function toggleJob(id: string, currentActive: boolean) {
     setToggling(id)
@@ -126,17 +143,27 @@ export default function JobsTable({ initialJobs }: { initialJobs: Job[] }) {
                   </span>
                 </td>
                 <td className="px-4 py-3 text-right">
-                  <button
-                    onClick={() => toggleJob(job.id, job.isActive)}
-                    disabled={toggling === job.id}
-                    className={`text-xs px-3 py-1.5 rounded-lg font-medium transition-colors disabled:opacity-50 ${
-                      job.isActive
-                        ? "bg-red-50 text-red-600 hover:bg-red-100"
-                        : "bg-green-50 text-green-600 hover:bg-green-100"
-                    }`}
-                  >
-                    {toggling === job.id ? "..." : job.isActive ? "Masquer" : "Activer"}
-                  </button>
+                  <div className="flex items-center justify-end gap-2">
+                    <button
+                      onClick={() => toggleJob(job.id, job.isActive)}
+                      disabled={toggling === job.id}
+                      className={`text-xs px-3 py-1.5 rounded-lg font-medium transition-colors disabled:opacity-50 ${
+                        job.isActive
+                          ? "bg-red-50 text-red-600 hover:bg-red-100"
+                          : "bg-green-50 text-green-600 hover:bg-green-100"
+                      }`}
+                    >
+                      {toggling === job.id ? "..." : job.isActive ? "Masquer" : "Activer"}
+                    </button>
+                    <button
+                      onClick={() => deleteJob(job.id)}
+                      disabled={deleting === job.id}
+                      className="p-1.5 rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 transition-colors disabled:opacity-50"
+                      title="Supprimer"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}

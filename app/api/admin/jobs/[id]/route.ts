@@ -44,7 +44,14 @@ export async function DELETE(
 
   const { id } = await params
 
-  await prisma.job.delete({ where: { id } })
-
-  return NextResponse.json({ success: true })
+  try {
+    // Delete related records first to avoid FK constraint errors
+    await prisma.savedJob.deleteMany({ where: { jobId: id } })
+    await prisma.jobApplication.deleteMany({ where: { jobId: id } })
+    await prisma.job.delete({ where: { id } })
+    return NextResponse.json({ success: true })
+  } catch (err) {
+    console.error("[DELETE /api/admin/jobs] error:", err)
+    return NextResponse.json({ error: "Failed to delete job" }, { status: 500 })
+  }
 }
