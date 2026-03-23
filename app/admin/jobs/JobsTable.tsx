@@ -105,7 +105,7 @@ export default function JobsTable({ initialJobs }: { initialJobs: Job[] }) {
         >
           <option value="all">Tous ({jobs.length})</option>
           <option value="active">Actifs ({jobs.filter(j => j.isActive).length})</option>
-          <option value="hidden">Masqués ({jobs.filter(j => !j.isActive).length})</option>
+          <option value="hidden">Archivés ({jobs.filter(j => !j.isActive).length})</option>
         </select>
         <span className="ml-auto text-sm text-gray-400 self-center">{filtered.length} résultats</span>
       </div>
@@ -139,7 +139,7 @@ export default function JobsTable({ initialJobs }: { initialJobs: Job[] }) {
                 <td className="px-4 py-3">
                   <span className={`inline-flex items-center gap-1 text-xs font-medium ${job.isActive ? "text-green-600" : "text-gray-400"}`}>
                     <span className={`w-1.5 h-1.5 rounded-full ${job.isActive ? "bg-green-500" : "bg-gray-300"}`} />
-                    {job.isActive ? "Actif" : "Masqué"}
+                    {job.isActive ? "Actif" : "Archivé"}
                   </span>
                 </td>
                 <td className="px-4 py-3 text-right">
@@ -153,7 +153,7 @@ export default function JobsTable({ initialJobs }: { initialJobs: Job[] }) {
                           : "bg-green-50 text-green-600 hover:bg-green-100"
                       }`}
                     >
-                      {toggling === job.id ? "..." : job.isActive ? "Masquer" : "Activer"}
+                      {toggling === job.id ? "..." : job.isActive ? "Archiver" : "Activer"}
                     </button>
                     <button
                       onClick={() => deleteJob(job.id)}

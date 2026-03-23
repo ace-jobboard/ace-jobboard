@@ -6,12 +6,12 @@ import {
 } from "recharts"
 
 const SCHOOL_COLORS: Record<string, string> = {
-  "Sport Management":        "#2aa38f",
-  "Hôtellerie & Luxe":      "#f59e0b",
-  "Mode & Luxe":             "#8b5cf6",
-  "Design":                  "#ef4444",
-  "Illustration & Animation":"#3b82f6",
-  "_dump":                   "#d1d5db",
+  "Sport Management":         "#15803d", // green-700  (AMOS)
+  "Hôtellerie & Luxe":       "#1e40af", // blue-800   (CMH)
+  "Mode & Luxe":              "#7e22ce", // purple-800 (EIDM)
+  "Design":                   "#c2410c", // orange-700 (ESDAC)
+  "Illustration & Animation": "#b91c1c", // red-700    (ENAAI)
+  "_dump":                    "#d1d5db",
 }
 
 interface Props {

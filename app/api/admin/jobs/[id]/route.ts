@@ -2,12 +2,16 @@ import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/auth"
 import { prisma } from "@/lib/db"
 
+function isBetaOrAdmin(role?: string) {
+  return process.env.BETA_OPEN_ACCESS === "true" || role === "ADMIN"
+}
+
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth()
-  if (!session?.user || session.user.role !== "ADMIN") {
+  if (!isBetaOrAdmin((session?.user as { role?: string } | undefined)?.role)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
@@ -38,7 +42,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth()
-  if (!session?.user || session.user.role !== "ADMIN") {
+  if (!isBetaOrAdmin((session?.user as { role?: string } | undefined)?.role)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
