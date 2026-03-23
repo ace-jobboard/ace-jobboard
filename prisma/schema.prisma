@@ -8,6 +8,21 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
+// ─── Enums ────────────────────────────────────────────────────────────────────
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum ScrapeStatus {
+  RUNNING
+  SUCCEEDED
+  FAILED
+}
+
+// ─── Job ──────────────────────────────────────────────────────────────────────
+
 model Job {
   id           String   @id @default(cuid())
   title        String
@@ -26,11 +41,11 @@ model Job {
   updatedAt    DateTime @updatedAt
 
   // Multi-source tracking
-  sources      String[]
-  firstSeenAt  DateTime @default(now())
-  lastSeenAt   DateTime @default(now())
+  sources     String[]
+  firstSeenAt DateTime @default(now())
+  lastSeenAt  DateTime @default(now())
 
-  // Extra enrichment
+  // Enrichment
   salary       String?
   memo         String?
   tags         String[]
@@ -39,44 +54,49 @@ model Job {
   postedAt     DateTime?
   expiresAt    DateTime?
   taskId       String?
-
-  // Apify metadata
   apifyActorId String?
   rawData      Json?
 
   savedBy      SavedJob[]
   applications JobApplication[]
 
-  @@index([filiere])
-  @@index([niveau])
-  @@index([region])
-  @@index([contractType])
+  // Composite indexes for common filter combinations
+  @@index([isActive, createdAt])
+  @@index([isActive, isApproved])
+  @@index([filiere, isActive])
+  @@index([contractType, isActive])
+  @@index([region, isActive])
+  @@index([niveau, isActive])
+  @@index([source])
 }
+
+// ─── ScrapeRun ────────────────────────────────────────────────────────────────
 
 model ScrapeRun {
-  id           String    @id @default(cuid())
-  apifyRunId   String?   @unique
-  school       String
-  source       String
-  status       String    @default("RUNNING")
+  id         String       @id @default(cuid())
+  apifyRunId String?      @unique
+  school     String
+  source     String
+  status     ScrapeStatus @default(RUNNING)
 
-  jobsFound    Int       @default(0)
-  jobsFiltered Int       @default(0)
-  jobsSaved    Int       @default(0)
-  duplicates   Int       @default(0)
+  jobsFound    Int @default(0)
+  jobsFiltered Int @default(0)
+  jobsSaved    Int @default(0)
+  duplicates   Int @default(0)
 
-  keywords     String?
-  error        String?
-  startedAt    DateTime  @default(now())
-  completedAt  DateTime?
-  runTime      Int?
+  keywords    String?
+  error       String?
+  startedAt   DateTime  @default(now())
+  completedAt DateTime?
+  runTime     Int?
 
-  createdAt    DateTime  @default(now())
+  createdAt DateTime @default(now())
 
-  @@index([school])
+  @@index([school, startedAt])
   @@index([status])
-  @@index([startedAt])
 }
+
+// ─── User ─────────────────────────────────────────────────────────────────────
 
 model User {
   id            String    @id @default(cuid())
@@ -106,9 +126,8 @@ model User {
   cvUploadedAt DateTime?
 
   // Role
-  role String @default("USER") // "USER" | "ADMIN"
+  role UserRole @default(USER)
 
-  // Relations
   accounts     Account[]
   sessions     Session[]
   savedJobs    SavedJob[]
@@ -116,7 +135,12 @@ model User {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([role])
+  @@index([createdAt])
 }
+
+// ─── NextAuth ─────────────────────────────────────────────────────────────────
 
 model Account {
   id                String  @id @default(cuid())
@@ -124,17 +148,18 @@ model Account {
   type              String
   provider          String
   providerAccountId String
-  refresh_token     String?
-  access_token      String?
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
   expires_at        Int?
   token_type        String?
   scope             String?
-  id_token          String?
+  id_token          String? @db.Text
   session_state     String?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
+  @@index([userId])
 }
 
 model Session {
@@ -142,7 +167,10 @@ model Session {
   sessionToken String   @unique
   userId       String
   expires      DateTime
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model VerificationToken {
@@ -153,6 +181,8 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
+// ─── HubSpot whitelist ────────────────────────────────────────────────────────
+
 model StudentWhitelist {
   id               String   @id @default(cuid())
   email            String   @unique
@@ -160,9 +190,9 @@ model StudentWhitelist {
   hubspotContactId String?
   verifiedAt       DateTime @default(now())
   expiresAt        DateTime
-
-  @@index([email])
 }
+
+// ─── User activity ────────────────────────────────────────────────────────────
 
 model JobApplication {
   id        String   @id @default(cuid())
@@ -172,10 +202,13 @@ model JobApplication {
   status    String   @default("applied")
   notes     String?
 
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  job       Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  job  Job  @relation(fields: [jobId], references: [id], onDelete: Cascade)
 
   @@unique([userId, jobId])
+  @@index([userId])
+  @@index([jobId])
+  @@index([status])
 }
 
 model SavedJob {
@@ -188,4 +221,24 @@ model SavedJob {
   job  Job  @relation(fields: [jobId], references: [id], onDelete: Cascade)
 
   @@unique([userId, jobId])
+  @@index([userId])
+  @@index([jobId])
+}
+
+// ─── Feedback / Bug reports ───────────────────────────────────────────────────
+
+model Feedback {
+  id        String   @id @default(cuid())
+  type      String   // "bug" | "suggestion"
+  message   String   @db.Text
+  email     String?
+  userId    String?
+  page      String?
+  userAgent String?
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([type])
+  @@index([isRead])
+  @@index([createdAt])
 }

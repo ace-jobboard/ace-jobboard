@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import { Inter, Poppins, Geist_Mono } from "next/font/google"
 import { SessionProvider } from "next-auth/react"
 import { Toaster } from "sonner"
+import FeedbackWidget from "@/components/feedback/FeedbackWidget"
 import "./globals.css"
 
 const inter = Inter({
@@ -38,6 +39,7 @@ export default function RootLayout({
     <html lang="fr">
       <body className={`${inter.variable} ${poppins.variable} ${geistMono.variable} antialiased`}>
         <SessionProvider>
+          <FeedbackWidget />
           {children}
         </SessionProvider>
         <Toaster position="top-right" richColors />
